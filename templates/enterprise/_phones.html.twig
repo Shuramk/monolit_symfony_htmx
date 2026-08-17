@@ -1,0 +1,5 @@
+{% for phone in phones %}
+    {{ phone.number }}{% if not loop.last %}, {% endif %}
+{% else %}
+    —
+{% endfor %}

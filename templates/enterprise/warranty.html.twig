@@ -1,0 +1,13 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Гарантийный талон{% endblock %}
+
+{% block body %}
+<main>
+    <p><a href="{{ path("enterprise_profile") }}">← Предприятие</a></p>
+    <h1>Гарантийный талон</h1>
+    <section class="enterprise-warranty">
+        {{ warranty.html|raw }}
+    </section>
+</main>
+{% endblock %}

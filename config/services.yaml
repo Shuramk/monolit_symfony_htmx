@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    app.legacy_admin_url: "%env(resolve:LEGACY_ADMIN_URL)%"
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: "../src/"
+
+    App\Domain\Identity\ReadModel\MenuView:
+        arguments:
+            $legacyAdminUrl: "%app.legacy_admin_url%"
+
+    App\Domain\Product\Repository\ProductCatalogRepository:
+        arguments:
+            $connection: "@doctrine.dbal.legacy_connection"

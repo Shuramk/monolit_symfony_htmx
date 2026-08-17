@@ -1,0 +1,15 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Продукция{% endblock %}
+
+{% block body %}
+    <main class="app-main">
+        <h1>Продукция</h1>
+        <form class="product-filter" hx-get="{{ path("product_catalog") }}" hx-target="#product-catalog-rows" hx-swap="innerHTML" hx-trigger="input changed delay:300ms, change">
+            <label>Поиск <input type="search" name="q" value="{{ query }}" autocomplete="off" placeholder="Наименование, цвет, группа"></label>
+            <label><input type="checkbox" name="include_disabled" value="1" {{ includeDisabled ? "checked" }}> Показывать отключённые</label>
+        </form>
+        <p class="product-count">Показаны первые {{ products|length }} позиций.</p>
+        <div class="product-table-wrap"><table class="product-table"><thead><tr><th>Группа</th><th>Продукция</th><th>Ед.</th><th>Цена</th><th>Статус</th></tr></thead><tbody id="product-catalog-rows">{% include "product/_rows.html.twig" %}</tbody></table></div>
+    </main>
+{% endblock %}

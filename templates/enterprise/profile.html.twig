@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Предприятие{% endblock %}
+
+{% block body %}
+<main class="app-main">
+    <h1>{{ (enterprise.shortName ?: enterprise.displayName)|replace({'<br>': ' ', '<br/>': ' ', '<br />': ' '})|striptags|trim }}</h1>
+    <p>{{ enterprise.displayName|replace({'<br>': ' ', '<br/>': ' ', '<br />': ' '})|striptags|trim }}</p>
+    <dl>
+        <dt>ЕГРПОУ (VAT)</dt><dd>{{ enterprise.edrpouVat ?: '—' }}</dd>
+        <dt>ЕГРПОУ (ФОП)</dt><dd>{{ enterprise.edrpouPe ?: '—' }}</dd>
+        <dt>Адрес</dt><dd>{{ enterprise.address|striptags|nl2br }}</dd>
+        <dt>Email</dt><dd>{{ enterprise.email ?: '—' }}</dd>
+        <dt>Телефоны</dt><dd>{% for phone in enterprise.phones %}{{ phone.number }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</dd>
+    </dl>
+    <p><a href="{{ path('enterprise_warranty') }}">Гарантийный талон</a></p>
+</main>
+{% endblock %}

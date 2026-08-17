@@ -1,0 +1,242 @@
+:root {
+    color: #111;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: #fff;
+    margin: 0;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+.app-navigation {
+    background: #fff;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 100;
+}
+
+.app-userbar {
+    align-items: center;
+    background: #777;
+    color: #fff;
+    display: flex;
+    height: 25px;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+.app-userbar strong {
+    font-size: 14px;
+}
+
+.app-userbar form {
+    margin: 0;
+}
+
+.app-userbar button {
+    background: transparent;
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    padding: 3px 0 3px 12px;
+    text-decoration: underline;
+}
+
+.app-top-tabs {
+    background: #fff;
+    display: flex;
+    min-height: 35px;
+    overflow-x: auto;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+.app-top-tab {
+    color: #000;
+    display: block;
+    font-size: 16px;
+    height: 32px;
+    margin-top: 3px;
+    padding: 6px 16px 5px;
+    text-decoration: none;
+}
+
+.app-top-tab:hover {
+    background: #eee;
+}
+
+.app-top-tab.is-active {
+    background: #ddd;
+    font-weight: bold;
+}
+
+.app-subtabs {
+    align-items: center;
+    background: #ddd;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    min-height: 42px;
+    overflow-x: auto;
+    padding: 4px 16px;
+    white-space: nowrap;
+}
+
+.app-subtab {
+    color: #000;
+    display: block;
+    font-size: 16px;
+    margin-right: 8px;
+    padding: 5px 12px;
+    text-decoration: none;
+}
+
+.app-subtab:hover,
+.app-subtab.is-active {
+    background: #fff;
+}
+
+.app-subtabs:empty {
+    display: none;
+}
+
+.app-main {
+    margin: 0;
+    padding: 110px 15px 20px;
+}
+
+.app-main h1 {
+    font-size: 20px;
+    margin: 0 0 14px;
+}
+
+.app-main h2 {
+    font-size: 17px;
+    margin-top: 24px;
+}
+
+.app-main a {
+    color: #000;
+}
+
+.app-main dl {
+    border: 1px solid #bbb;
+    margin: 0;
+    max-width: 860px;
+}
+
+.app-main dt,
+.app-main dd {
+    border-bottom: 1px solid #ddd;
+    margin: 0;
+    min-height: 31px;
+    padding: 7px 10px;
+}
+
+.app-main dt {
+    background: #eee;
+    float: left;
+    font-weight: bold;
+    width: 220px;
+}
+
+.app-main dd {
+    margin-left: 220px;
+}
+
+.app-main dl > :last-child {
+    border-bottom: 0;
+}
+
+.login-page {
+    background: #ccc;
+    min-height: 100vh;
+}
+
+.login-box {
+    background: #fff;
+    border: 1px solid #000;
+    left: 50%;
+    margin: 0;
+    padding: 14px 18px;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+}
+
+.login-box h1 {
+    font-size: 16px;
+    margin: 0 0 14px;
+    text-align: center;
+}
+
+.login-box label {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 75px 1fr;
+    margin: 8px 0;
+}
+
+.login-box input {
+    border: 1px solid #767676;
+    min-width: 0;
+    padding: 2px 4px;
+}
+
+.login-box button {
+    display: block;
+    margin: 14px auto 0;
+    padding: 2px 12px;
+}
+
+.product-filter { align-items: center; display: flex; gap: 16px; margin-bottom: 8px; }
+
+.product-filter input[type="search"] { margin-left: 6px; min-width: 280px; }
+
+.product-count { color: #555; margin: 8px 0; }
+
+.product-table-wrap { max-width: 100%; overflow-x: auto; }
+
+.product-table { border-collapse: collapse; min-width: 850px; width: 100%; }
+
+.product-table th, .product-table td { border: 1px solid #bbb; padding: 5px 8px; text-align: left; }
+
+.product-table th { background: #ddd; }
+
+.product-table .is-disabled { color: #777; background: #f2f2f2; }
+
+.product-empty { text-align: center !important; }
+
+.error {
+    color: #d00000;
+    margin: 0 0 10px;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .app-main {
+        padding-top: 110px;
+    }
+
+    .app-main dt {
+        float: none;
+        width: auto;
+    }
+
+    .app-main dd {
+        margin-left: 0;
+    }
+}

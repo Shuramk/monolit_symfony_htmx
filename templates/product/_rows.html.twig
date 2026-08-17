@@ -1,0 +1,5 @@
+{% for product in products %}
+    <tr class="{{ product.enabled ? "" : "is-disabled" }}"><td>{{ product.parentName|default("—")|striptags }}</td><td>{{ product.name|striptags }}</td><td>{{ product.measure|striptags }}</td><td>{{ product.price }}</td><td>{{ product.enabled ? "активна" : "отключена" }}</td></tr>
+{% else %}
+    <tr><td colspan="5" class="product-empty">Ничего не найдено.</td></tr>
+{% endfor %}

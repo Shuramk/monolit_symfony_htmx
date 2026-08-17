@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Миграция Monolit{% endblock %}
+
+{% block body %}
+    <main class="app-main">
+        <h1>Monolit → Symfony + HTMX</h1>
+        <p>Новый контур развёрнут отдельно от legacy-приложения.</p>
+
+        <section
+            id="migration-status"
+            hx-get="{{ path('migration_status') }}"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        >
+            Проверяем состояние миграционного контура…
+        </section>
+
+        <h2>Правила первого этапа</h2>
+        <ul>
+            <li>Legacy-приложение и его маршруты остаются рабочими.</li>
+            <li>Подключение к MySQL будет добавлено отдельно и сначала только для чтения.</li>
+            <li>Каждая операция записи переносится вместе с тестами её текущего поведения.</li>
+        </ul>
+    </main>
+{% endblock %}
