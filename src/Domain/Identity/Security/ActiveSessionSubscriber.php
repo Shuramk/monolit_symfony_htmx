@@ -2,6 +2,8 @@
 
 namespace App\Domain\Identity\Security;
 
+use App\Domain\Identity\Entities\User;
+
 use App\Domain\Identity\Repository\IdentitySessionRepository;
 use App\Domain\Identity\Audit\AuthenticationAuditRepository;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -36,11 +38,11 @@ final readonly class ActiveSessionSubscriber implements EventSubscriberInterface
 
         $user = $this->tokenStorage->getToken()?->getUser();
 
-        if (!$user instanceof IdentityUser || !$request->hasSession()) {
+        if (!$user instanceof User || !$request->hasSession()) {
             return;
         }
 
-        if ($this->identitySessionRepository->isCurrent($user->getId(), $request->getSession()->getId(), new \DateTimeImmutable())) {
+        if ($user->canAccess() && $this->identitySessionRepository->isCurrent($user->getId(), $request->getSession()->getId(), new \DateTimeImmutable())) {
             return;
         }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Domain\Identity\ReadModel\MenuView;
-use App\Domain\Identity\Security\IdentityUser;
+use App\Domain\Identity\Entities\User;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -22,7 +22,7 @@ final class NavigationExtension extends AbstractExtension {
     public function menu(): array {
         $user = $this->tokenStorage->getToken()?->getUser();
 
-        if (!$user instanceof IdentityUser) {
+        if (!$user instanceof User) {
             return [];
         }
 

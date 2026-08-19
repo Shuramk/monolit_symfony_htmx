@@ -1,0 +1,48 @@
+/* Paper size comes from the print dialog; do not shrink an A4 layout onto A5. */
+@page { size: auto; margin: 12.7mm; }
+
+body.order-print-page { background: #eee; color: #000; font: 12pt Arial, sans-serif; margin: 0; padding: 12px; }
+.order-print-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 24px; margin: 0 auto 16px; max-width: 190mm; font-size: 16px; }
+.order-print-toolbar button { cursor: pointer; font: inherit; }
+.order-print-document { background: white; box-sizing: border-box; margin: auto; max-width: 100%; padding: 12.7mm; position: relative; width: 210mm; font: 9pt Arial, sans-serif; }
+.order-print-enterprise { display: grid; grid-template-columns: 45px minmax(0, 1fr) 24%; align-items: start; gap: 8px; margin-bottom: 13px; }
+.order-print-logo { width: 45px; height: 45px; object-fit: contain; }
+.order-print-enterprise-name { font-size: 9pt; line-height: 1.5; text-align: center; white-space: pre-line; }
+.order-print-contacts { font-size: 8pt; line-height: 1.1; overflow-wrap: anywhere; max-width: 170px; justify-self: end; }
+.order-print-heading { display: grid; grid-template-columns: minmax(0, 1fr) 31.5%; align-items: center; gap: 7px 0; margin-bottom: 29px; }
+.order-print-heading h1 { font: bold 9pt Arial, sans-serif; margin: 0; }
+.order-print-date { border: 1px solid black; font-size: 9pt; line-height: 9pt; text-align: center; padding: 1px 3px; white-space: nowrap; }
+.order-print-desired-label { font-size: 8pt; text-align: right; }
+.order-print-customer { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 0; margin: 0 1% 11px; font-size: 8pt; line-height: 12px; }
+.order-print-customer > div { border-bottom: 1px solid black; overflow-wrap: anywhere; }
+.order-print-customer-name { padding-right: 30px; text-align: center; }
+.order-print-shipping-address { grid-column: 1 / -1; min-height: 12px; text-align: center; }
+.order-print-items { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.order-print-items th, .order-print-items td { border: 1px solid black; padding: 3px; font-size: 9pt; line-height: 8pt; text-align: center; overflow-wrap: anywhere; }
+.order-print-items thead th { font-size: 8pt; }
+.order-print-items .print-product-name { text-align: left; }
+.order-print-items .print-numeric { text-align: right; white-space: nowrap; }
+.print-number { width: 3.5%; }
+.print-unit { width: 10%; }
+.print-quantity { width: 10%; }
+.print-price { width: 70px; }
+.print-amount { width: 80px; }
+.order-print-totals th { border: 0; text-align: right; font-weight: normal; padding-right: 8px; }
+.order-print-totals td { font-weight: bold; text-align: right; white-space: nowrap; }
+.order-print-notes { margin: 20px 0 19px; }
+.order-print-note { font-size: 9pt; line-height: 8pt; margin: 0 0 8px; text-align: justify; text-indent: 1.5em; }
+.order-print-signatures { display: grid; grid-template-columns: 47% 47%; gap: 6%; font-size: 9pt; line-height: 8pt; break-inside: avoid; }
+.order-print-signature { border-bottom: 1px solid black; min-height: 16px; }
+.order-print-customer-signature { display: flex; align-items: flex-end; padding-top: 12px; }
+.order-print-customer-signature .order-print-signature { flex: 1; }
+.order-print-paid { display: block; height: 100px; width: auto; margin-top: -60px; margin-left: 80px; position: relative; }
+.order-print-paid[hidden] { display: none; }
+
+@media print {
+    body.order-print-page { background: white; padding: 0; margin: 0; }
+    .order-print-toolbar, .sf-toolbar, .sf-toolbarreset { display: none !important; }
+    .order-print-document { width: 100%; max-width: none; padding: 0; margin: 0; }
+    .order-print-items thead { display: table-header-group; }
+    .order-print-items tr { break-inside: avoid; }
+    .order-print-totals { break-inside: avoid; }
+}

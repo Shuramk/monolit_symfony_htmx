@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ task ? 'Задача №' ~ task.id : 'Новая задача' }}{% endblock %}
+{% block body %}
+{% set active = not task or not task.completed_at and not task.cancelled and not task.hidden %}
+{% set executor = task and (task.executor_id == app.user.id or app.user.id in task.coexecutors) %}
+{% set author = task and task.author_id == app.user.id %}
+{% set editable = active and (not task or director or author or executor) %}
+{% set main = app.user.role and app.user.role.value == 'ROLE_MAIN' %}
+<main class="app-main product-settings crm-page"><h3><a href="{{ path(director ? 'crm_director_tasks' : 'crm_tasks') }}">CRM » {{ director ? 'Задачи (директор)' : 'Задачи' }}</a> » {{ task ? 'Задача №' ~ task.id : 'Новая задача' }}</h3>
+{% if task %}<p>Автор: {{ task.author_name }}. Создана {{ task.created_at|date('d-m-Y H:i') }}. {{ task.hidden ? 'Скрыта' : (task.cancelled ? 'Отменена' : (task.completed_at ? 'Выполнена ' ~ task.completed_at|date('d-m-Y H:i') : 'В работе')) }}</p>{% endif %}
+<form method="post" action="{{ task ? path(director ? 'crm_director_task_save' : 'crm_task_save',{id:task.id}) : path(director ? 'crm_director_task_create' : 'crm_task_create') }}" data-controller="json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity">
+<input type="hidden" name="_token" value="{{ csrf_token('session') }}">{% if task %}<input type="hidden" name="version" value="{{ task.version }}">{% endif %}
+<fieldset class="crm-fields" {{ editable ? '' : 'disabled' }}>
+<label>Исполнитель <select name="executorId" required>{% for user in users %}{% if user.enabled or task and task.executor_id == user.id %}<option value="{{ user.id }}" {{ task ? (task.executor_id == user.id ? 'selected') : (app.user.id == user.id ? 'selected') }}>{{ user.display_name }}</option>{% endif %}{% endfor %}</select></label>
+<label>Дата выполнения <input type="datetime-local" name="dueAt" value="{{ task and task.due_at ? task.due_at|date('Y-m-d\\TH:i') : 'now'|date('Y-m-d\\T18:00') }}" required></label>
+<label class="crm-wide">Описание <textarea name="text" required maxlength="20000" {{ not task or director or author ? '' : 'readonly' }}>{{ task ? task.text : '' }}</textarea></label>
+<label>Комментарий <textarea name="lastComment" maxlength="20000">{{ task ? task.last_comment : '' }}</textarea></label>
+<label>Комментарий руководителя <textarea name="directorComment" maxlength="20000" {{ main ? '' : 'readonly' }}>{{ task ? task.director_comment : '' }}</textarea></label>
+<fieldset class="crm-participants"><legend>Соисполнители</legend>{% for user in users %}{% if user.enabled or task and user.id in task.coexecutors %}<label><input type="checkbox" name="coexecutors[{{ loop.index0 }}][id]" value="{{ user.id }}" {{ task and user.id in task.coexecutors ? 'checked' }}> {{ user.display_name }}</label>{% endif %}{% endfor %}</fieldset>
+<fieldset class="crm-participants"><legend>Наблюдатели</legend>{% for user in users %}{% if user.enabled or task and user.id in task.observers %}<label><input type="checkbox" name="observers[{{ loop.index0 }}][id]" value="{{ user.id }}" {{ task and user.id in task.observers ? 'checked' }}> {{ user.display_name }}</label>{% endif %}{% endfor %}</fieldset>
+</fieldset>
+{% if editable %}<button type="submit" class="legacy-button">Сохранить</button>{% endif %} <a href="{{ path(director ? 'crm_director_tasks' : 'crm_tasks') }}">К списку</a><p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+</form>
+{% if task %}<div class="crm-actions">{% set actionRoute = director ? 'crm_director_task_action' : 'crm_task_action' %}
+{% if active and (director or executor) %}{% include 'crm/_action.html.twig' with {actionUrl:path(actionRoute,{id:task.id,action:'complete'}),version:task.version,label:'Выполнить',reason:true} only %}{% endif %}
+{% if task.completed_at and not task.cancelled and not task.hidden and (director or executor or author) %}{% include 'crm/_action.html.twig' with {actionUrl:path(actionRoute,{id:task.id,action:'reopen'}),version:task.version,label:'Отменить выполнение'} only %}{% endif %}
+{% if active and (director or author) %}<details><summary>Отменить задачу</summary>{% include 'crm/_action.html.twig' with {actionUrl:path(actionRoute,{id:task.id,action:'cancel'}),version:task.version,label:'Отменить задачу',reason:true} only %}</details>{% endif %}
+{% if main and task.cancelled %}{% include 'crm/_action.html.twig' with {actionUrl:path(actionRoute,{id:task.id,action:'restore'}),version:task.version,label:'Восстановить'} only %}{% if not task.hidden %}{% include 'crm/_action.html.twig' with {actionUrl:path(actionRoute,{id:task.id,action:'hide'}),version:task.version,label:'Скрыть'} only %}{% endif %}{% endif %}</div>
+<h3>Файлы</h3><ul>{% for file in task.files %}<li>{% if file.available %}<a href="{{ path('crm_task_download',{id:task.id,file:file.id}) }}">{{ file.original_name }}</a> ({{ (file.size / 1024)|number_format(1,'.',' ') }} КБ){% else %}{{ file.original_name }} — файл отсутствует{% endif %}{% if editable %}{% include 'crm/_action.html.twig' with {actionUrl:path('crm_task_file_remove',{id:task.id,file:file.id}),version:task.version,label:'Удалить'} only %}{% endif %}</li>{% else %}<li>Нет файлов.</li>{% endfor %}</ul>
+{% if editable %}<form method="post" action="{{ path('crm_task_upload',{id:task.id}) }}" enctype="multipart/form-data"><input type="hidden" name="_token" value="{{ csrf_token('session') }}"><input type="hidden" name="version" value="{{ task.version }}"><input type="file" name="files[]" multiple required aria-label="Файлы задачи"><button type="submit" class="legacy-button">Загрузить</button><small>До 10 МБ на файл.</small></form>{% endif %}
+{% include 'crm/_history.html.twig' with {kind:'task',history:task.history} only %}{% endif %}
+</main>
+{% endblock %}

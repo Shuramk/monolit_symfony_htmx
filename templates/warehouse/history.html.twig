@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+{% block title %}История — {{ view.product.name }}{% endblock %}
+{% block body %}
+<main class="app-main warehouse-details">
+<h1><a href="{{ path('warehouse_products') }}">Склад</a> » <a href="{{ path('warehouse_products') }}">Продукция</a> » <a href="{{ path('warehouse_group',{id:view.product.parent_id}) }}">{{ view.product.group_name }}</a> » {{ view.product.name }}. История.</h1>
+{% include 'warehouse/_history_pagination.html.twig' %}
+<div class="warehouse-detail-wrap"><table class="warehouse-history-table"><thead><tr><th>№</th><th>Дата</th><th>Склад</th><th>Действие</th><th>Кол-во</th><th>Кто изменил</th><th>Комментарий</th><th>Произведено</th></tr></thead><tbody>{% for row in view.rows %}<tr><td>{{ (view.page-1)*50+loop.index }}</td><td>{{ row.created_at ? row.created_at|date('d-m-Y H:i:s') : '' }}</td><td>{{ {1:'Офис',2:'Цех',3:'Очаков'}[row.storage]|default(row.storage) }}</td><td class="{{ row.action == 'added' ? 'warehouse-history-added' : 'warehouse-history-removed' }}">{{ row.action == 'added' ? 'Добавлено' : 'Отгружено' }}</td><td class="warehouse-stock">{{ row.quantity }} {{ view.product.unit }}</td><td>{{ row.user_name|default(row.user_id) }}</td><td>{{ row.comment }}</td><td>{{ row.shift_name|default(row.shift_id ? 'Смена ' ~ row.shift_id : '') }}{% if row.manufacturing_date %}<br>{{ row.manufacturing_date|date('d-m-Y') }}{% endif %}</td></tr>{% else %}<tr><td colspan="8">Нет истории</td></tr>{% endfor %}</tbody></table></div>
+{% include 'warehouse/_history_pagination.html.twig' %}
+</main>
+{% endblock %}

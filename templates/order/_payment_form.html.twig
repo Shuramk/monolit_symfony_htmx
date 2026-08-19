@@ -1,0 +1,13 @@
+<section class="legacy-order-payment-action" data-controller="order-payment" data-order-payment-csrf-value="{{ csrf_token('session') }}">
+    <button type="button" class="legacy-button" data-action="order-payment#open">{{ delivery|default(false) ? 'Добавить оплату за доставку' : 'Добавить оплату' }}</button>
+    <dialog class="legacy-order-payment-dialog" data-order-payment-target="dialog" data-action="cancel->order-payment#close">
+        <div class="legacy-order-payment-heading"><h3>{{ delivery|default(false) ? 'Внесение оплаты за доставку' : 'Внесение оплаты за плитку' }}</h3><button type="button" class="legacy-order-payment-close" data-action="order-payment#close" aria-label="Закрыть">×</button></div>
+        <form action="{{ path(delivery|default(false) ? 'order_delivery_payment_add' : 'order_payment_add', {id: order.id}) }}" method="post" data-action="submit->order-payment#submit invalid->order-payment#invalid:capture input->order-payment#clearValidity">
+            <input type="hidden" name="operationId">
+            <label class="legacy-order-payment-amount">Сумма <span class="legacy-order-payment-input"><input name="amount" inputmode="decimal" autocomplete="off" required pattern="[0-9]{1,10}([.,][0-9]{1,2})?" aria-label="Сумма оплаты"><span>грн</span></span></label>
+            {% if order.markup == 0 %}<label class="legacy-order-payment-card"><input type="checkbox" name="toCard"> Сумма внесена на карту</label>{% endif %}
+            <p class="legacy-form-error" data-order-payment-target="error" role="alert" hidden></p>
+            <div class="legacy-order-payment-buttons"><button type="submit" class="legacy-button">Сохранить</button></div>
+        </form>
+    </dialog>
+</section>

@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+{% block title %}Склад — Продукция{% endblock %}
+{% block body %}
+<main class="app-main warehouse-overview" data-controller="warehouse" data-action="click@window->warehouse#outside keydown.esc@window->warehouse#closeAll resize@window->warehouse#closeAll scroll@window->warehouse#closeAll">
+<h1><a href="{{ path('warehouse_products') }}">Склад</a> » Продукция</h1>
+<div class="warehouse-overview-grid">
+{% for type, title in {1:'Прессованная плитка:',2:'Литая плитка',3:'Другое',4:'Комплекс энерго'} %}
+<section class="warehouse-section warehouse-section-{{ type }}">
+{% if type > 2 %}<details><summary>{{ title }}</summary>{% else %}<div class="warehouse-section-heading"><strong>{{ title }}</strong>{% if is_granted('WAREHOUSE_INVENTORY') %}<a class="warehouse-inventory-button" href="{{ path('warehouse_inventory', {type:type}) }}" target="_blank" rel="noopener">Бланк инвентаризации</a>{% endif %}</div>{% endif %}
+{% include 'warehouse/_groups_table.html.twig' with {groups:view.sections[type],type:type} only %}
+{% if type > 2 %}</details>{% endif %}
+</section>
+{% endfor %}
+</div>
+</main>
+{% endblock %}

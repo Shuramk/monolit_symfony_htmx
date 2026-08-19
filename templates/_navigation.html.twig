@@ -3,25 +3,31 @@
         <strong>{{ app.user ? app.user.displayName : "Monolit" }}</strong>
         {% if app.user %}
             <form action="{{ path("app_logout") }}" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token("session") }}">
                 <button type="submit">Выход</button>
             </form>
         {% endif %}
     </div>
     {% set currentPath = app.request.pathInfo %}
+    {% set menu = app_menu() %}
+    {% set activeSection = null %}
+    {% for item in menu %}
+        {% set active = currentPath == item.url or currentPath starts with (item.url ~ '/') %}
+        {% for child in item.children %}
+            {% if currentPath == child.url or currentPath starts with (child.url ~ '/') %}{% set active = true %}{% endif %}
+        {% endfor %}
+        {% if active %}{% set activeSection = item %}{% endif %}
+    {% endfor %}
     <div class="app-top-tabs">
-        <a class="app-top-tab {{ currentPath == path("migration_dashboard") ? "is-active" }}" href="{{ path("migration_dashboard") }}">Главная</a>
-        {% for item in app_menu() %}
-            {% set active = currentPath starts with item.url %}
-            <a class="app-top-tab {{ active ? "is-active" }}" href="{{ item.url }}">{{ item.title }}</a>
+        {% for item in menu %}
+            {% set active = activeSection and activeSection.divisionId == item.divisionId %}
+            <a class="app-top-tab{{ active ? ' is-active' }}" href="{{ item.url }}"{% if active %} aria-current="true"{% endif %}>{{ item.title }}</a>
         {% endfor %}
     </div>
-    <div class="app-subtabs">
-        {% for item in app_menu() %}
-            {% if currentPath starts with item.url %}
-                {% for child in item.children %}
-                    <a class="app-subtab {{ currentPath starts with child.url ? "is-active" }}" href="{{ child.url }}">{{ child.title }}</a>
-                {% endfor %}
-            {% endif %}
+    <div class="app-subtabs" role="navigation" aria-label="Меню раздела">
+        {% for child in activeSection ? activeSection.children : [] %}
+            {% set active = currentPath == child.url or currentPath starts with (child.url ~ '/') %}
+            <a class="app-subtab{{ active ? ' is-active' }}" href="{{ child.url }}"{% if active %} aria-current="page"{% endif %}>{{ child.title }}</a>
         {% endfor %}
     </div>
 </nav>

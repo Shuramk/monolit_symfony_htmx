@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ deal ? 'Сделка №' ~ deal.id : 'Новая сделка' }}{% endblock %}
+{% block body %}
+{% set editable = not deal or deal.state == 'active' %}
+<main class="app-main product-settings crm-page crm-deal-page"><h3><a href="{{ path('crm_deals') }}">CRM</a> » <a href="{{ path('crm_deals') }}">Сделки</a> » {{ deal ? 'Изменение сделки №' ~ deal.id : 'Создание сделки' }}</h3>
+{% if deal %}<p>Создана: {{ deal.created_at|date('d-m-Y H:i') }}. {{ deal.author_name }}. Статус: {{ {active:'Активная',cancelled:'Отменена',hidden:'Скрыта',converted:'В заказе'}[deal.state] }}{% if deal.converted_order_id %}. <a href="{{ path('order_show',{id:deal.converted_order_id}) }}">Заказ №{{ deal.converted_order_id }}</a>{% endif %}</p>{% endif %}
+<div class="crm-deal-toolbar">
+{% if deal and deal.source_order_id|default(null) and is_granted('LEGACY_DIVISION', 220) %}
+    <p>Отменённый заказ: <a href="{{ path('order_show', {id: deal.source_order_id}) }}">№{{ deal.source_order_id }}</a></p>
+{% endif %}
+{% if editable %}<button type="submit" form="crm-deal-form" class="crm-deal-button">Сохранить</button>{% endif %}
+{% if is_granted('LEGACY_DIVISION',225) and is_granted('LEGACY_DIVISION',220) %}<a class="crm-deal-button crm-new-order" href="{{ path('order_new') }}" target="_blank" rel="noopener">Создать новый заказ</a>{% endif %}
+{% if deal and deal.state == 'active' %}<details class="crm-deal-cancel"><summary class="crm-deal-button">Отменить</summary>{% include 'crm/_action.html.twig' with {actionUrl:path('crm_deal_action',{id:deal.id,action:'cancel'}),version:deal.version,label:'Сохранить',reasonLabel:'Комментарий',reason:true,cancelTypes:cancelTypes} only %}</details>{% endif %}
+<div class="crm-deal-documents">{% if deal and deal.lines and deal.state not in ['cancelled','hidden'] %}{% if deal.markup > 0 %}<a class="crm-deal-button" href="{{ path('crm_deal_document',{id:deal.id,kind:'invoice'}) }}">Счет</a>{% endif %}<a class="crm-deal-button" href="{{ path('crm_deal_document',{id:deal.id,kind:'offer'}) }}">Коммерческое</a>{% endif %}</div>
+</div>
+<form id="crm-deal-form" class="crm-deal-form" method="post" action="{{ deal ? path('crm_deal_save',{id:deal.id}) : path('crm_deal_create') }}" data-controller="json-form crm order-form" data-order-form-products-value="{{ productsByParent|json_encode }}" data-order-form-allow-empty-value="true" data-action="submit->crm#syncContactAt submit->json-form#submit invalid->crm#reveal:capture invalid->json-form#invalid:capture input->json-form#clearValidity">
+<input type="hidden" name="_token" value="{{ csrf_token('session') }}">{% if deal %}<input type="hidden" name="version" value="{{ deal.version }}">{% endif %}
+<fieldset class="crm-deal-fields" {{ editable ? '' : 'disabled' }}>
+<div class="crm-deal-source-row"><label class="crm-to-order">В заказ: <input type="checkbox" name="toOrder" value="1" {{ deal and editable and is_granted('LEGACY_DIVISION',225) and is_granted('LEGACY_DIVISION',220) ? '' : 'disabled' }}></label>
+<label>Источник клиента: <select name="sourceId"><option value="0"></option>{% for id,title in sources %}<option value="{{ id }}" {{ deal and deal.source_id == id ? 'selected' }}>{{ title }}</option>{% endfor %}</select></label></div>
+<div class="crm-deal-panel">
+<div class="crm-deal-row crm-party-row"><div><strong>Заказчик:</strong>{% if editable %}<details class="crm-party-picker"><summary>Изменить</summary><div><label>Заказчик <select name="customerId" data-crm-target="customerSelect" data-action="change->crm#customer" required><option value="">Выберите клиента</option>{% for customer in customers %}<option value="{{ customer.id }}" data-name="{{ customer.name }}" data-phone="{{ customer.phone|phone_format }}" {{ deal and deal.customer_id == customer.id ? 'selected' }}>{{ customer.name }}{% if customer.phone %}, {{ customer.phone|phone_format }}{% endif %}</option>{% endfor %}</select></label></div></details>{% endif %}</div>
+<div><span data-crm-target="customerName">{{ deal ? deal.customer_name : '' }}</span><br><span data-crm-target="customerPhone">{{ deal ? deal.phone|phone_format : '' }}</span></div></div>
+<div class="crm-deal-row crm-deal-border"><label class="crm-deal-budget"><strong>Предполагаемый бюджет:</strong><input name="budget" value="{{ deal ? deal.budget : '' }}" inputmode="decimal" data-order-form-target="budget" {{ deal and deal.lines ? 'readonly' }}></label></div>
+<div class="crm-deal-row crm-deal-split crm-deal-border">
+<label class="crm-deal-left"><strong>Описание:</strong><textarea name="comment" maxlength="20000">{{ deal ? deal.comment : '' }}</textarea></label>
+<label class="crm-deal-right"><strong>Комментарий руководителя:</strong><textarea name="directorComment" maxlength="20000" {{ app.user.role and app.user.role.value == 'ROLE_MAIN' ? '' : 'readonly' }}>{{ deal ? deal.director_comment : '' }}</textarea></label>
+</div>
+<div class="crm-deal-row crm-deal-border"><strong>Планируемый контакт:</strong></div>
+<div class="crm-deal-row crm-deal-split"><label class="crm-deal-left">Комментарий:<textarea name="contactComment" maxlength="20000">{{ deal and deal.contact ? deal.contact.comment : '' }}</textarea></label>
+<label class="crm-deal-executor">Исполнитель:<select name="executorId" required><option value="">Выберите исполнителя</option>{% for user in users %}{% if user.enabled or deal and deal.contact and deal.contact.executor_id == user.id %}<option value="{{ user.id }}" {{ deal and deal.contact ? (deal.contact.executor_id == user.id ? 'selected') : (app.user.id == user.id ? 'selected') }}>{{ user.display_name }}</option>{% endif %}{% endfor %}</select></label></div>
+{% set contact = deal and deal.contact ? deal.contact.due_at : 'now' %}
+<div class="crm-deal-row crm-contact-date"><label for="crm-contact-date">Дата контакта:</label><div><input id="crm-contact-date" type="date" data-crm-target="contactDate" data-action="input->crm#syncContactAt" value="{{ contact|date('Y-m-d') }}" required> <input type="time" data-crm-target="contactTime" data-action="input->crm#syncContactAt" value="{{ contact|date('H:i') }}" required aria-label="Время контакта"><input type="hidden" name="contactAt" data-crm-target="contactAt" value="{{ contact|date('Y-m-d\\TH:i') }}"></div></div>
+<div class="crm-deal-row crm-party-row crm-deal-border"><div><strong>Укладчик:</strong>{% if editable %}<details class="crm-party-picker"><summary>изменить</summary><div><label>Укладчик <select name="stackerId" data-crm-target="stackerSelect" data-action="change->crm#stacker"><option value="0" data-name="" data-phone="">Не выбран</option>{% for customer in customers %}{% if customer.stacker_id or deal and deal.stacker_id == customer.id %}<option value="{{ customer.id }}" data-name="{{ customer.name }}" data-phone="{{ customer.phone|phone_format }}" {{ deal and deal.stacker_id == customer.id ? 'selected' }}>{{ customer.name }}</option>{% endif %}{% endfor %}</select></label></div></details>{% endif %}</div>
+<div><span data-crm-target="stackerName">{{ deal ? deal.stacker_name : '' }}</span><br><span data-crm-target="stackerPhone"></span></div></div>
+</div>
+</fieldset>
+<details class="crm-deal-section"><summary>Продукция</summary><div class="crm-deal-section-body">{% include 'crm/_products.html.twig' %}</div></details><p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+</form>
+{% if deal %}<div class="crm-actions">
+{% if deal.state in ['cancelled','hidden'] and app.user.role and app.user.role.value == 'ROLE_MAIN' %}
+{% include 'crm/_action.html.twig' with {actionUrl:path('crm_deal_action',{id:deal.id,action:'restore'}),version:deal.version,label:'Восстановить'} only %}
+{% if deal.state == 'cancelled' %}{% include 'crm/_action.html.twig' with {actionUrl:path('crm_deal_action',{id:deal.id,action:'hide'}),version:deal.version,label:'Скрыть'} only %}{% endif %}
+{% endif %}</div>{% endif %}
+<details class="crm-deal-section"><summary>Лог</summary><div class="crm-deal-section-body">{% if deal %}{% include 'crm/_history.html.twig' with {kind:'deal',history:deal.history} only %}{% else %}История появится после сохранения сделки.{% endif %}</div></details>
+</main>
+{% endblock %}

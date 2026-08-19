@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+{% set product = view.product %}{% set parent = view.parent %}{% set variants = view.variants %}{% set history = view.history %}
+{% block title %}{{ product ? product.name : 'Новая продукция' }} — Настройки{% endblock %}
+{% block body %}
+<main class="app-main product-settings">
+<h1><a href="{{ path('product_settings') }}">Продукция</a> » {% if parent %}<a href="{{ path('product_settings_edit', {id:parent.id}) }}">{{ parent.name }}</a> » {% endif %}{{ product ? product.name : (parent ? 'Новый цвет / вариант' : 'Новая продукция') }}</h1>
+<form class="product-settings-form" action="{{ product ? path('product_settings_save', {id:product.id}) : path('product_settings_create', {parentId:parent ? parent.id : 0}) }}" method="post" data-controller="json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity">
+<input type="hidden" name="_token" value="{{ csrf_token('session') }}"><input type="hidden" name="version" value="{{ product ? product.edit_version : 0 }}">
+<p class="form-error" role="alert" tabindex="-1" data-json-form-target="error" hidden></p>
+<label>Наименование <input name="name" value="{{ product ? product.name : '' }}" maxlength="510" required></label>
+<label>Наименование українською <input name="nameUk" value="{{ product ? product.name_uk : '' }}" maxlength="510"></label>
+{% set unit = parent ? parent.unit : (product ? product.unit : 'шт') %}
+{% set units = ['шт','шт.','м','м<sup>2</sup>','м<sup>3</sup>','кг','т','л','п.'] %}
+<label>Единица измерения <select name="unit" required {{ parent ? 'disabled' }}>{% if unit not in units %}<option value="{{ unit }}" selected>{{ unit ?: 'Выберите единицу' }}</option>{% endif %}{% for value in units %}<option value="{{ value }}" {{ value == unit ? 'selected' }}>{{ value|replace({'<sup>2</sup>':'²','<sup>3</sup>':'³'}) }}</option>{% endfor %}</select><small>У вариантов наследуется от группы.</small></label>
+{% if parent %}<input type="hidden" name="unit" value="{{ unit }}">{% endif %}
+{% set productType = parent ? parent.type : (product ? product.type : 3) %}
+<label>Тип <select name="type" {{ parent ? 'disabled' }}>{% for value, title in {1:'Прессованная',2:'Литая',3:'Прочая',4:'Энергоресурсы'} %}<option value="{{ value }}" {{ value == productType ? 'selected' }}>{{ title }}</option>{% endfor %}</select></label>
+{% if parent %}<input type="hidden" name="type" value="{{ productType }}"><label>Цена, грн <input type="number" name="price" min="0" max="99999999.9999" step="0.0001" value="{{ product ? product.price : '0' }}" required></label>{% else %}<input type="hidden" name="price" value="0">{% endif %}
+<label>Сортировка <input type="number" name="sorting" min="0" max="2147483647" step="1" value="{{ product ? product.sorting : 100 }}" required></label>
+<label>Статус <select name="enabled"><option value="1" {{ not product or product.enabled ? 'selected' }}>Активна</option><option value="0" {{ product and not product.enabled ? 'selected' }}>Отключена</option></select></label>
+<label>Вес единицы, кг <input type="number" name="weightPerUnit" min="0" max="999999999.999" step="0.001" value="{{ product ? product.weight_per_unit : '' }}"></label>
+<label>Минимальное количество <input type="number" name="minQuantity" min="0" max="999999999.999" step="0.001" value="{{ product ? product.min_quantity : '' }}"></label>
+<label>Инвентарное наименование <input name="inventoryName" maxlength="255" value="{{ product ? product.inventory_name : '' }}"></label>
+<label>Формы <input name="forms" maxlength="255" value="{{ product ? product.forms : '' }}"></label>
+{% set pallets = product and product.pallets ? product.pallets|split(';') : [] %}
+<fieldset><legend>Переложка на поддонах</legend><p>Заполните все три поля или оставьте вариант пустым.</p>
+{% for offset in [0,3] %}<div class="product-pallet-row">{% for label in ['Количество на поддоне','Рядов','Количество в ряду'] %}{% set index = offset + loop.index0 %}<label>{{ label }} <input name="pallet{{ index }}" type="number" step="0.001" min="0.001" max="999999999.999" value="{{ pallets[index]|default('') }}"></label>{% endfor %}</div>{% endfor %}
+</fieldset>
+<div><button type="submit" class="legacy-button">Сохранить</button> <a href="{{ path('product_settings') }}">Отмена</a></div>
+</form>
+{% if product and not parent %}
+{% include 'product/_variants_editor.html.twig' %}
+{% endif %}
+{% if history %}<h2>История изменений</h2>{% for event in history %}<details><summary>{{ event.created_at|date('d-m-Y H:i:s') }} — {{ event.event == 'created' ? 'Добавлено' : 'Изменено' }} (пользователь №{{ event.user_id }})</summary><table class="product-table"><thead><tr><th>Поле</th><th>До</th><th>После</th></tr></thead><tbody>{% for key, value in event.after %}{% if event.before is null or event.before[key] != value %}<tr><td>{{ key }}</td><td>{{ event.before[key]|default('—') }}</td><td>{{ value is same as(true) ? 'Да' : (value is same as(false) ? 'Нет' : value) }}</td></tr>{% endif %}{% endfor %}</tbody></table></details>{% endfor %}{% endif %}
+</main>
+{% endblock %}

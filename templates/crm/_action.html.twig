@@ -1,0 +1,6 @@
+<form method="post" action="{{ actionUrl }}" data-controller="json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity" class="crm-action">
+    <input type="hidden" name="_token" value="{{ csrf_token('session') }}"><input type="hidden" name="version" value="{{ version }}">
+    {% if reason|default(false) %}<label>{{ reasonLabel|default(label) }}<textarea name="comment" maxlength="20000" {{ requiredReason|default(false) ? 'required' }}></textarea></label>{% endif %}
+    {% if cancelTypes|default(null) %}<label>Причина <select name="cancelType"><option value="0">Другая</option>{% for id,title in cancelTypes %}<option value="{{ id }}">{{ title }}</option>{% endfor %}</select></label>{% endif %}
+    <button type="submit" class="legacy-button">{{ label }}</button><p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+</form>

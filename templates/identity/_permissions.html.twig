@@ -1,0 +1,19 @@
+{% macro rows(nodes,assigned,startPage,depth=0,hidden=false) %}
+{% for node in nodes %}
+{% set expanded = depth > 0 %}
+<tr class="{{ depth > 0 ? 'user-permission-child' : 'user-permission-section' }}" data-permission-row="{{ node.id }}" data-parent="{{ node.parent }}" data-expanded="{{ expanded ? 'true' : 'false' }}" {{ hidden ? 'hidden' }}>
+    <td class="user-permission-toggle-cell">{% if depth == 0 and node.children %}<button type="button" data-permission-toggle="{{ node.id }}" data-action="user-permissions#toggle" aria-expanded="{{ expanded ? 'true' : 'false' }}" aria-label="Раскрыть или свернуть {{ node.title }}">{{ expanded ? '−' : '+' }}</button>{% endif %}</td>
+    <td class="user-permission-title" style="--permission-depth:{{ depth > 0 ? 1 : 0 }}"><label for="permission-{{ node.id }}" title="Право {{ node.id }}">{{ node.title }}</label></td>
+    <td><input id="permission-{{ node.id }}" type="checkbox" name="permissions[{{ node.id }}][id]" value="{{ node.id }}" data-permission-checkbox="{{ node.id }}" {{ node.id in assigned ? 'checked' }} aria-label="Разрешить {{ node.title }}"></td>
+    <td>{% if node.enabled %}<input type="radio" name="startPageId" value="{{ node.id }}" data-start-page-title="{{ node.title }}" required {{ startPage == node.id ? 'checked' }} aria-label="Стартовая страница: {{ node.title }}">{% endif %}</td>
+</tr>
+{{ _self.rows(node.children,assigned,startPage,depth+1,hidden or not expanded) }}
+{% endfor %}
+{% endmacro %}
+
+{% macro selectedTitle(nodes,startPage) %}
+{%- for node in nodes -%}
+    {%- if node.enabled and node.id == startPage -%}{{ node.title }}{%- endif -%}
+    {{- _self.selectedTitle(node.children,startPage) -}}
+{%- endfor -%}
+{% endmacro %}

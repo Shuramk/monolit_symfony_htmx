@@ -1,0 +1,6 @@
+<select id="product-options-{{ index }}" name="lines[{{ index }}][productId]" data-action="change->order-form#productChanged" required {{ products is empty ? "disabled" }}>
+    <option value="">Выбрать вариант</option>
+    {% for product in products %}
+        <option value="{{ product.id }}" data-price="{{ product.price }}"{{ selectedProductId is defined and selectedProductId is not null and selectedProductId == product.id ? ' selected' }}>{{ product.name }}</option>
+    {% endfor %}
+</select>

@@ -1,0 +1,9 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Заказы{% endblock %}
+
+{% block body %}
+    <main id="order-list" class="app-main legacy-orders-page">
+        {% include 'order/_list.html.twig' %}
+    </main>
+{% endblock %}

@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Identity\Security;
 
+use App\Domain\Identity\Entities\User;
+
 use App\Domain\Identity\Repository\IdentityMenuRepository;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 final class DivisionAccessVoter extends Voter {
-    public const ATTRIBUTE = "LEGACY_DIVISION";
+    public const string ATTRIBUTE = "LEGACY_DIVISION";
 
     public function __construct(private readonly IdentityMenuRepository $identityMenuRepository) {
     }
@@ -23,7 +25,7 @@ final class DivisionAccessVoter extends Voter {
     protected function voteOnAttribute(string $attribute, mixed $divisionId, TokenInterface $token, ?Vote $vote = null): bool {
         $user = $token->getUser();
 
-        if (!$user instanceof IdentityUser) {
+        if (!$user instanceof User || !$user->canAccess()) {
             return false;
         }
 

@@ -1,0 +1,17 @@
+{% set currentMarkup = deal ? deal.markup : 0 %}
+<fieldset class="crm-deal-product-fields" {{ editable ? '' : 'disabled' }}>
+{% if editable %}<button type="button" class="crm-deal-button" data-action="order-form#add">Добавить продукт</button>{% endif %}
+<div class="legacy-order-create-table-wrap"><table class="grid legacy-order-create-lines crm-product-lines">
+<thead><tr class="gridsheader"><td>Наименование</td><td>Цвет</td><td>Количество</td><td>Цена</td><td data-order-form-target="vatColumn" hidden>Цена с НДС</td><td data-order-form-target="fopColumn" hidden>Цена с наценкой ФОП</td><td>Скидка</td><td>Сумма</td><td></td></tr></thead>
+<tbody data-order-form-target="lines">{% for line in deal ? deal.lines : [] %}{% include 'crm/_product_line.html.twig' with {index:loop.index0,selected:line.form} %}{% endfor %}</tbody>
+<tfoot><tr><td colspan="9"><table class="legacy-order-create-totals">
+<tr><td>Итого:</td><td><output data-order-form-target="total">0.00 грн</output></td></tr>
+<tr><td>БН:</td><td><select data-order-form-target="markupMode" data-action="change->order-form#markupChanged"><option value="0" {{ currentMarkup == 0 ? 'selected' }}>0</option><option value="fop" {{ currentMarkup > 0 and currentMarkup != 20 ? 'selected' }}>ФОП</option><option value="vat" {{ currentMarkup == 20 ? 'selected' }}>НДС</option></select> <select data-order-form-target="markupFop" data-action="change->order-form#markupChanged" hidden>{% for percent in 1..100 %}{% if percent != 20 %}<option value="{{ percent }}" {{ percent == (currentMarkup > 0 and currentMarkup != 20 ? currentMarkup : 10) ? 'selected' }}>{{ percent }}</option>{% endif %}{% endfor %}</select><span data-order-form-target="markupSuffix">{% if currentMarkup == 20 %}20 {% endif %}%</span></td></tr>
+<tr><td>НДС:</td><td><output data-order-form-target="vatAmount">0.00 грн</output></td></tr>
+<tr><td>Итого с бн:</td><td><output data-order-form-target="totalWithMarkup">0.00 грн</output></td></tr>
+<tr><td>К оплате:</td><td><output data-order-form-target="balance">0.00 грн</output></td></tr>
+</table></td></tr></tfoot></table></div>
+<input type="hidden" name="markup" value="{{ currentMarkup }}" data-order-form-target="markup">
+<div class="crm-deal-product-options"><label>Желаемая дата доставки <input type="date" name="desiredAt" value="{{ deal and deal.desired_at ? deal.desired_at|date('Y-m-d') : '' }}"></label><label>Адрес доставки <input name="shippingAddress" value="{{ deal ? deal.shipping_address : '' }}"></label></div>
+</fieldset>
+<template data-order-form-target="template">{% include 'crm/_product_line.html.twig' with {index:'__INDEX__',selected:null} %}</template>

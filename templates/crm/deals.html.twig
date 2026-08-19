@@ -1,0 +1,77 @@
+{% extends 'base.html.twig' %}
+{% block title %}CRM{% endblock %}
+{% block body %}
+<main class="app-main product-settings crm-page crm-board-page" data-controller="crm-board">
+<div class="crm-board-top">
+    <h3><a href="{{ path('crm_deals') }}">CRM</a> » CRM</h3>
+    <div class="crm-board-counters">
+    {% for group,fields in {'Звонков':{new_calls:'новых',calls:'всего'},'Посетителей':{new_visitors:'новых',visitors:'всего'}} %}
+        <div class="crm-counter-group"><strong>{{ group }}:</strong>
+        {% for key,title in fields %}
+            <form action="{{ path('crm_counter') }}" method="post" data-action="submit->crm-board#counter">
+                <input type="hidden" name="_token" value="{{ csrf_token('session') }}"><input type="hidden" name="kind" value="{{ key }}">
+                <strong>{{ title }}: <span data-counter-value>{{ counters[key] }}</span></strong>
+                <button class="crm-counter-plus" type="submit" aria-label="{{ group }} {{ title }}: добавить">+</button>
+            </form>
+        {% endfor %}</div>
+    {% endfor %}
+    </div>
+</div>
+<div class="crm-board-filter-row">
+    <details class="crm-board-filter">
+        <summary>Фильтр</summary>
+        <form method="get" class="crm-board-filter-panel">
+            <label>Поиск <input name="q" value="{{ q }}"></label>
+            <label>Сделки <select name="state">{% for value,title in {active:'Активные',cancelled:'Отменённые',hidden:'Скрытые',converted:'В заказах'} %}<option value="{{ value }}" {{ state == value ? 'selected' }}>{{ title }}</option>{% endfor %}</select></label>
+            <fieldset><legend>Менеджеры</legend>{% for user in users %}{% if user.enabled or user.id in managers %}<label><input type="checkbox" name="managers[]" value="{{ user.id }}" {{ user.id in managers ? 'checked' }}> {{ user.display_name }}</label>{% endif %}{% endfor %}</fieldset>
+            <button class="legacy-button" type="submit">Отфильтровать</button> <a href="{{ path('crm_deals') }}">Сбросить</a>
+        </form>
+    </details>
+    {% if managers %}<span>Выбранные менеджеры: {% for user in users|filter(user => user.id in managers) %}{{ user.display_name }}{{ not loop.last ? ', ' }}{% endfor %}</span>{% endif %}
+    {% if q %}<span>Поиск: {{ q }}</span>{% endif %}
+    <span class="form-error" data-crm-board-target="error" hidden role="alert" tabindex="-1"></span>
+</div>
+<div class="crm-board-viewport"><div class="crm-board">
+    <section class="crm-board-column" data-column="deals" aria-label="Сделки">
+        <div class="crm-column-heading crm-deals-heading"><div><strong>Сделки ({{ board.deals|length }})</strong><br>{% if app.user.role.value == 'ROLE_MAIN' %}<strong>{{ board.dealTotal|number_format(2,'.',' ') }}</strong>{% endif %}</div>
+            {% if is_granted('LEGACY_DIVISION',1701) %}<a class="crm-create-deal" href="{{ path('crm_deal_new') }}">Создать <span class="crm-plus-icon">+</span></a>{% endif %}
+        </div>
+        <div class="crm-column-scroll" tabindex="0" aria-label="Карточки сделок">
+        {% for deal in board.deals %}
+            <article class="crm-board-card" data-deal-id="{{ deal.id }}">
+                <header><a class="crm-card-primary-link" href="{{ path('crm_deal_show',{id:deal.id}) }}">Сделка №{{ deal.id }}.</a><time>{{ deal.created_at|date('d-m-Y H:i') }}</time></header>
+                <div class="crm-card-body"><div class="crm-card-customer">{{ deal.customer_name }}</div>
+                    Бюджет: <strong>{{ deal.budget|number_format(2,'.',' ') }}</strong><br>Исполнитель: {{ deal.executor_name ?: '—' }}
+                    <div class="crm-card-comment">{{ deal.comment }}</div><span class="crm-card-steps" title="Записей в истории">{{ deal.steps }}</span>
+                </div>
+                <footer>{% include 'crm/_deadline.html.twig' with {deadline:deal.deadline} only %}</footer>
+            </article>
+        {% else %}<p class="crm-column-empty">Сделок нет.</p>{% endfor %}
+        </div>
+    </section>
+    <section class="crm-board-column" data-column="orders" aria-label="Заказы">
+        <div class="crm-column-heading"><strong>Заказы ({{ board.orders|length }})</strong><br>{% if app.user.role.value == 'ROLE_MAIN' %}<strong>{{ board.orderTotal|number_format(2,'.',' ') }} ({{ board.unpaidTotal|number_format(2,'.',' ') }})</strong>{% endif %}</div>
+        <div class="crm-column-scroll" tabindex="0" aria-label="Карточки заказов">
+        {% for order in board.orders %}
+            <article class="crm-board-card" data-order-id="{{ order.id }}">
+                <header>{% if is_granted('LEGACY_DIVISION',226) %}<a class="crm-card-primary-link" href="{{ path('order_show',{id:order.id}) }}">№{{ order.id }}.</a>{% else %}№{{ order.id }}.{% endif %} {{ order.created_at|date('d-m-Y') }}.</header>
+                <div class="crm-card-body"><div class="crm-card-customer">{{ order.customer_name }}</div>{{ order.customer_phone|phone_format }}<br>
+                    Сумма: <strong>{{ order.amount|number_format(2,'.',' ') }} ({{ order.unpaid|number_format(2,'.',' ') }})</strong><br>Исполнитель: {{ order.executor_name ?: '—' }}
+                    <span class="crm-card-steps" title="Записей в истории">{{ order.steps }}</span>
+                </div>
+                <footer>{% include 'crm/_deadline.html.twig' with {deadline:order.deadline} only %}</footer>
+            </article>
+        {% else %}<p class="crm-column-empty">Заказов нет.</p>{% endfor %}
+        </div>
+    </section>
+    {% for key,config in {shipments:{title:'Задачи на отгрузку',tasks:board.shipments,total:board.taskTotal},approved:{title:'Согласованные задачи на отгрузку',tasks:board.approved,total:board.approvedTotal}} %}
+    <section class="crm-board-column" data-column="{{ key }}" aria-label="{{ config.title }}">
+        <div class="crm-column-heading"><strong>{{ config.title }} ({{ config.tasks|length }})</strong><br>{% if app.user.role.value == 'ROLE_MAIN' %}<strong>{{ config.total|number_format(2,'.',' ') }}</strong>{% endif %}</div>
+        <div class="crm-column-scroll" tabindex="0" aria-label="{{ config.title }}: карточки">
+        {% for task in config.tasks %}{% include 'crm/_shipment_card.html.twig' with {task:task} %}{% else %}<p class="crm-column-empty">Задач нет.</p>{% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+</div></div>
+</main>
+{% endblock %}

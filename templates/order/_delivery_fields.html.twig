@@ -1,0 +1,17 @@
+<section class="legacy-order-form-section">
+    <h3>Доставка</h3>
+    <div class="legacy-order-form-fields">
+        <label>Дата выполнения заказа
+            <input type="date" name="desiredAt" value="{{ values.desiredAt }}" required>
+        </label>
+        <label>Стоимость доставки
+            <span class="legacy-order-form-money"><input type="number" name="shippingCost" value="{{ values.shippingCost }}" min="0" step="0.01" required> грн.</span>
+        </label>
+        <label class="legacy-order-form-wide">Адрес доставки
+            <textarea name="shippingAddress" rows="3">{{ values.shippingAddress }}</textarea>
+        </label>
+        <label class="legacy-order-form-wide">Комментарий
+            <textarea name="comments" rows="3">{{ values.comments }}</textarea>
+        </label>
+    </div>
+</section>

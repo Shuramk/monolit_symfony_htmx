@@ -11,10 +11,50 @@ services:
     App\:
         resource: "../src/"
 
+    App\Application\Middleware\IdentityUserResolver:
+        autoconfigure: false
+        tags:
+            - { name: controller.argument_value_resolver, priority: 110 }
+
+    App\Application\Middleware\RequestDtoResolver:
+        autoconfigure: false
+        tags:
+            - { name: controller.argument_value_resolver, priority: 100 }
+
+    request.kernel.listener:
+        class: App\Infrastructure\Event\Listener\RequestListener
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
+
     App\Domain\Identity\ReadModel\MenuView:
         arguments:
             $legacyAdminUrl: "%app.legacy_admin_url%"
 
     App\Domain\Product\Repository\ProductCatalogRepository:
         arguments:
-            $connection: "@doctrine.dbal.legacy_connection"
+            $connection: "@doctrine.dbal.app_connection"
+
+    App\Domain\Product\Repository\ProductSettingsRepository:
+        arguments:
+            $connection: "@doctrine.dbal.app_connection"
+
+    App\Domain\Warehouse\Repository\WarehouseViewRepository:
+        arguments:
+            $connection: "@doctrine.dbal.app_connection"
+
+    App\Domain\Order\Repository\OrderViewRepository:
+        arguments:
+            $connection: "@doctrine.dbal.app_connection"
+
+    App\Domain\Customer\Repository\CustomerViewRepository:
+        arguments:
+            $connection: "@doctrine.dbal.app_connection"
+
+    App\Domain\Order\Repository\OrderChangelogRepository:
+        arguments:
+            $connection: "@doctrine.dbal.app_connection"
+
+    App\Application\Command\ImportLegacyOrderManagersCommand:
+        arguments:
+            $legacy: "@doctrine.dbal.legacy_connection"
+            $app: "@doctrine.dbal.app_connection"

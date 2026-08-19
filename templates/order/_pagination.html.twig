@@ -1,0 +1,4 @@
+{% include 'components/_pagination.html.twig' with {
+    current: page.page, pages: page.pages, route: 'order_list', params: page.filterParams,
+    label: 'Страницы заказов', target: '#order-list', class: 'legacy-orders-pagination'
+} only %}

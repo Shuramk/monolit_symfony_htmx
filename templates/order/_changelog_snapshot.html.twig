@@ -1,0 +1,17 @@
+{% if snapshot %}
+    <div class="order-changelog-snapshot">
+        {% for line in snapshot.lines %}
+            <div>{{ line.groupName|replace({'<sup>2</sup>': '²', '<sup>3</sup>': '³'}) }} {{ line.name }}:
+                {{ line.quantity }} {{ line.unit|replace({'<sup>2</sup>': '²', '<sup>3</sup>': '³'}) }} по {{ line.effectiveUnitPrice }} грн
+                — {{ line.total }} грн
+            </div>
+        {% endfor %}
+        <div>Заказчик: {{ snapshot.customer.name }}{% if snapshot.customer.phone %}, {{ snapshot.customer.phone }}{% endif %}</div>
+        <div>Адрес доставки: {{ snapshot.delivery.address ?: '—' }}</div>
+        <div>Дата доставки: {{ snapshot.delivery.date|date('d-m-Y') }}</div>
+        <div>Стоимость доставки: {{ snapshot.delivery.cost }} грн</div>
+        {% if snapshot.markup %}<div>БН: {{ snapshot.markup == 20 ? 'НДС' : 'ФОП' }} {{ snapshot.markup }}%</div>{% endif %}
+        <div>Итого: {{ snapshot.total }} грн</div>
+        {% if snapshot.comments %}<div>Комментарий: {{ snapshot.comments|nl2br }}</div>{% endif %}
+    </div>
+{% endif %}

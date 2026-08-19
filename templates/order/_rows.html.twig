@@ -1,0 +1,16 @@
+{% for order in orders %}
+    <tr class="{{ loop.index is odd ? "gridline" : "gridline1" }} legacy-order-state-{{ order.status.value }}" style="{{ order.statusColor }}">
+        <td class="legacy-order-number"><a class="legacy-order-link" href="{{ path("order_show", {id: order.id}) }}">{{ order.id }}</a></td>
+        <td class="legacy-order-date"><a class="legacy-order-link" href="{{ path("order_show", {id: order.id}) }}">{{ order.createdAt|date("d-m-Y") }}</a></td>
+        <td class="legacy-order-date"><a class="legacy-order-link" href="{{ path("order_show", {id: order.id}) }}">{{ order.desiredDate|date("d-m-Y") }}</a></td>
+        <td><a class="legacy-order-link" href="{{ path("order_show", {id: order.id}) }}">{{ order.customerName|striptags }}</a></td>
+        <td><a class="legacy-order-link" href="{{ path("order_show", {id: order.id}) }}">{{ order.shippingAddress|striptags }}</a></td>
+        <td class="legacy-order-loyalty">—</td>
+        <td class="legacy-order-readiness">—</td>
+        <td><a class="legacy-order-link" href="{{ path("order_show", {id: order.id}) }}">{{ order.statusTitle|striptags }}</a></td>
+    </tr>
+{% else %}
+    <tr class="gridline1">
+        <td colspan="8" class="legacy-grid-empty">Заказы не найдены.</td>
+    </tr>
+{% endfor %}

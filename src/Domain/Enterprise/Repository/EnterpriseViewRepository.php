@@ -16,6 +16,29 @@ final readonly class EnterpriseViewRepository {
     ) {
     }
 
+    /** @return array<string, mixed>|null */
+    public function findDocumentProfile(): ?array {
+        $enterprise = $this->connection->fetchAssociative('
+            SELECT id, legal_name_vat, legal_name_pe, display_name, address, email,
+                edrpou_vat, edrpou_pe, payment_account_vat, payment_account_pe
+            FROM enterprise_profiles
+            ORDER BY id
+            LIMIT 1
+        ');
+        if ($enterprise === false) {
+
+            return null;
+        }
+        $enterprise['phones'] = $this->connection->fetchFirstColumn('
+            SELECT number
+            FROM enterprise_phones
+            WHERE enterprise_profile_id = :profileId
+            ORDER BY position, id
+        ', ['profileId' => $enterprise['id']]);
+
+        return $enterprise;
+    }
+
     public function getById(int $id): EnterpriseViewDto {
         $enterprise = $this->connection->createQueryBuilder()
             ->select(
@@ -26,6 +49,7 @@ final readonly class EnterpriseViewRepository {
                 "edrpou_pe AS edrpouPe",
                 "address",
                 "email",
+                "website",
             )
             ->from("enterprise_profiles")
             ->where("id = :id")

@@ -1,0 +1,11 @@
+<table class="warehouse-groups-table">
+<colgroup><col class="warehouse-number-col"><col>{% if type < 3 %}<col class="warehouse-forms-col">{% endif %}<col class="warehouse-stock-col"></colgroup>
+<thead><tr><th aria-label="Номер"></th><th>Наименование</th>{% if type < 3 %}<th>{{ type == 1 ? 'Пресс' : 'Формы' }}</th>{% endif %}<th>Склад</th></tr></thead><tbody>
+{% for group in groups %}
+<tr><td>{{ loop.index }}</td><td><a class="warehouse-group-name" href="{{ path('warehouse_group', {id:group.id}) }}">{{ group.name }}</a></td>{% if type < 3 %}<td class="warehouse-forms-value">{{ group.forms }}</td>{% endif %}
+<td class="warehouse-stock-cell"><span class="warehouse-stock-wrapper">
+<button type="button" class="warehouse-stock-total" data-warehouse-stock-button data-action="warehouse#toggle" aria-expanded="false" aria-controls="warehouse-stock-{{ group.id }}">{{ group.total }}{% if group.unit %} {{ group.unit }}{% endif %}</button>
+<span class="warehouse-stock-popover" data-warehouse-target="popover" id="warehouse-stock-{{ group.id }}" role="dialog" aria-label="{{ group.name }}: остатки по складам" hidden><strong>{{ group.name }}</strong><span class="warehouse-stock-breakdown"><span>Офис</span><span>Цех</span><span>{{ group.office }} {{ group.unit }}</span><span>{{ group.workshop }} {{ group.unit }}</span></span></span>
+</span></td></tr>
+{% else %}<tr><td colspan="{{ type < 3 ? 4 : 3 }}">Нет продукции</td></tr>{% endfor %}
+</tbody></table>
