@@ -1,6 +1,6 @@
 security:
     password_hashers:
-        App\Domain\Identity\Security\IdentityUser:
+        App\Domain\Identity\Entities\User:
             algorithm: argon2id
 
     providers:
@@ -25,17 +25,23 @@ security:
             logout:
                 path: app_logout
                 target: app_login
+                enable_csrf: true
+                csrf_parameter: _token
+                csrf_token_id: session
 
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/migration, roles: PUBLIC_ACCESS }
         - { path: ^/enterprise, roles: ROLE_USER }
+        - { path: '^/orders(?:/|$)', roles: ROLE_USER }
+        - { path: '^/(settings/products|warehouse/products|products)(?:/|$)', roles: ROLE_USER }
+        - { path: '^/settings/users(?:/|$)', roles: ROLE_USER }
 
 when@test:
     security:
         password_hashers:
-            App\Domain\Identity\Security\IdentityUser:
+            App\Domain\Identity\Entities\User:
                 algorithm: argon2id
                 time_cost: 3
                 memory_cost: 10

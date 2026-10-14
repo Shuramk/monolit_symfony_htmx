@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Бланк инвентаризации — {{ view.type == 1 ? 'Прессованная' : 'Литая' }} продукция</title><link rel="icon" href="{{ asset('favicon.png') }}">{{ importmap('app') }}<link rel="stylesheet" href="{{ asset('styles/warehouse_inventory.css') }}"></head>
+<body class="warehouse-inventory-page" data-controller="warehouse">
+<div class="warehouse-inventory-toolbar"><button type="button" data-action="warehouse#print">Печатать</button><a href="{{ path('warehouse_products') }}">Вернуться на склад</a></div>
+<main class="warehouse-inventory-document"><div>Дата: {{ view.date }}</div>
+{% for group in view.groups %}<section class="warehouse-inventory-group"><h2>{{ group.name }}<span>Единица измерения: {{ group.unit }}</span></h2>
+{% for pallet in group.palletRows %}<div class="warehouse-inventory-pallet">{{ pallet.label }}: {{ pallet.total }}{{ group.unit }}/п; {{ pallet.rows }} рядов; {{ pallet.perRow }}{{ group.unit }}/ряд</div>{% endfor %}
+<table><colgroup><col style="width: 20px"><col style="width: 200px"><col><col style="width: 57px"><col style="width: 57px"><col style="width: 57px"></colgroup><thead><tr><th>№</th><th>Цвет</th><th>Подсчет</th><th>Факт</th><th>В базе</th><th>Разница</th></tr></thead><tbody>
+{% for variant in group.variants %}<tr><td>{{ loop.index }}</td><td>{{ variant.name }}</td><td></td><td></td><td></td><td></td></tr>{% else %}<tr><td colspan="6">Нет вариантов</td></tr>{% endfor %}
+</tbody></table></section>{% else %}<p>Нет продукции этого типа.</p>{% endfor %}
+</main></body></html>

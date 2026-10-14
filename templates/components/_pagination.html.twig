@@ -1,0 +1,35 @@
+{# Required: current, pages, route. Optional: params, label, target (HTMX). #}
+{% macro number(number, current, route, params) %}
+    {% if number == current %}
+        <span class="pagination-button" data-page="{{ number }}" aria-current="page" aria-label="Страница {{ number }}">{{ number }}</span>
+    {% else %}
+        <a class="pagination-button{{ number != 1 and (number - current)|abs > 1 ? ' pagination-neighbour' }}" data-page="{{ number }}" href="{{ path(route, params|merge({page: number})) }}" aria-label="Страница {{ number }}">{{ number }}</a>
+    {% endif %}
+{% endmacro %}
+{% if pages > 1 %}
+    {% set params = params|default({}) %}
+    {% set start = max(1, min(current - 2, pages - 4)) %}
+    {% set end = min(pages, start + 4) %}
+    <nav class="pagination {{ class|default('') }}" aria-label="{{ label|default('Страницы списка') }}"
+         {% if target|default(null) %}hx-boost="true" hx-target="{{ target }}" hx-swap="innerHTML" hx-push-url="true"{% endif %}>
+        {% if current > 1 %}
+            <a class="pagination-button pagination-direction" data-direction="prev" rel="prev" href="{{ path(route, params|merge({page: current - 1})) }}" aria-label="Предыдущая страница">‹<span> Назад</span></a>
+        {% else %}
+            <span class="pagination-button pagination-direction" data-direction="prev" aria-disabled="true" aria-label="Предыдущая страница">‹<span> Назад</span></span>
+        {% endif %}
+        {% if start > 1 %}{{ _self.number(1, current, route, params) }}{% endif %}
+        {% if start == 3 %}{{ _self.number(2, current, route, params) }}
+        {% elseif start > 3 %}<span class="pagination-ellipsis" aria-hidden="true">…</span>{% endif %}
+        {% for number in start..end %}{{ _self.number(number, current, route, params) }}{% endfor %}
+        {% if end == pages - 2 %}{{ _self.number(pages - 1, current, route, params) }}
+        {% elseif end < pages - 2 %}<span class="pagination-ellipsis" aria-hidden="true">…</span>{% endif %}
+        {% if end < pages %}
+            <a class="pagination-button" data-page="{{ pages }}" href="{{ path(route, params|merge({page: pages})) }}" aria-label="Последняя страница, {{ pages }}">{{ pages }}</a>
+        {% endif %}
+        {% if current < pages %}
+            <a class="pagination-button pagination-direction" data-direction="next" rel="next" href="{{ path(route, params|merge({page: current + 1})) }}" aria-label="Следующая страница"><span>Далее </span>›</a>
+        {% else %}
+            <span class="pagination-button pagination-direction" data-direction="next" aria-disabled="true" aria-label="Следующая страница"><span>Далее </span>›</span>
+        {% endif %}
+    </nav>
+{% endif %}

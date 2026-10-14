@@ -1,0 +1,29 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Новый заказ — заказчик{% endblock %}
+
+{% block body %}
+<main class="app-main legacy-order-form-page">
+    <h3 class="legacy-order-breadcrumb"><a href="{{ path("order_list") }}">Заказы</a> » Новый заказ</h3>
+
+    <form method="post" action="{{ path("order_create") }}" class="legacy-order-form" data-controller="json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity">
+        <input type="hidden" name="_token" value="{{ csrf_token("session") }}">
+        <p class="error" data-json-form-target="error" role="alert" tabindex="-1" hidden></p>
+
+        <section class="legacy-order-form-section">
+        <h3>Выбрать покупателя</h3>
+        <label class="legacy-order-form-wide">
+            Заказчик
+            <select name="customerId" required>
+                <option value="">Выберите заказчика</option>
+                {% for customer in customers %}
+                    <option value="{{ customer.id }}">{{ customer.name }}{% if customer.phone %} — {{ customer.phone }}{% endif %}</option>
+                {% endfor %}
+            </select>
+        </label>
+        </section>
+        {% include 'order/_delivery_fields.html.twig' with {values: {desiredAt: desiredAt, shippingCost: '0', shippingAddress: '', comments: ''}} %}
+        <div class="legacy-order-form-actions"><button type="submit" class="legacy-order-form-submit">Сохранить</button></div>
+    </form>
+</main>
+{% endblock %}

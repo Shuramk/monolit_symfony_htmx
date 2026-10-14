@@ -1,0 +1,36 @@
+<details class="legacy-orders-advanced" data-controller="order-search"
+         data-order-search-products-value="{{ page.productsByParent|json_encode|e('html_attr') }}"
+         data-action="click@document->order-search#outside keydown.esc@document->order-search#close">
+    <summary>Поиск заказа</summary>
+    <form class="legacy-orders-advanced-popup" method="get" action="{{ path('order_list') }}"
+          hx-get="{{ path('order_list') }}" hx-target="#order-list" hx-swap="innerHTML" hx-push-url="true">
+        <input type="hidden" name="sort" value="{{ page.sort.value }}">
+        <input type="hidden" name="direction" value="{{ page.direction }}">
+        <div class="legacy-orders-search-fields">
+            <label for="search-order-id">Номер заказа:</label><input id="search-order-id" name="search[orderId]" value="{{ page.search.orderId ?? '' }}">
+            <label for="search-customer">Покупатель:</label><input id="search-customer" name="search[customer]" value="{{ page.search.customer ?? '' }}">
+            <label for="search-phone">Телефон:</label><input id="search-phone" name="search[phone]" value="{{ page.search.phone ?? '' }}">
+            <label for="search-address">Адрес:</label><input id="search-address" name="search[address]" value="{{ page.search.address ?? '' }}">
+            <label for="search-parent">Продукт:</label>
+            <div class="legacy-orders-search-products">
+                <select id="search-parent" name="search[parentId]" data-order-search-target="parent" data-action="change->order-search#changeParent">
+                    <option value="0">Все продукты</option>
+                    {% for group in page.productGroups %}<option value="{{ group.id }}"{{ group.id == (page.search.parentId ?? 0) ? ' selected' }}>{{ group.name|striptags }}</option>{% endfor %}
+                </select>
+                <select name="search[productId]" aria-label="Цвет" data-order-search-target="product">
+                    <option value="0">Выбрать цвет</option>
+                    {% for product in page.productsByParent[page.search.parentId ?? 0] ?? [] %}<option value="{{ product.id }}"{{ product.id == (page.search.productId ?? 0) ? ' selected' }}>{{ product.name|striptags }}</option>{% endfor %}
+                </select>
+            </div>
+            <label for="search-quantity">Кол-во:</label><div><input id="search-quantity" name="search[quantity]" inputmode="decimal" pattern="[0-9]+([.,][0-9]{1,3})?" value="{{ page.search.quantity ?? '' }}" title="Число, до трёх знаков после запятой"><small>±5 от указанного количества</small></div>
+            <div>Статус:</div>
+            <div class="legacy-orders-search-statuses">
+                {% for status in page.statusOptions %}
+                    <label class="legacy-status-{{ status.value }}"><input type="checkbox" name="statuses[]" value="{{ status.value }}"{{ page.search and status in page.statuses ? ' checked' }}> {{ status.title }}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit">Искать</button>
+        <a href="{{ path('order_list') }}" hx-boost="true">Сбросить</a>
+    </form>
+</details>

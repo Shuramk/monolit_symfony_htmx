@@ -1,0 +1,12 @@
+{% set selected = selected|default(null) %}
+<tr data-order-line class="gridline1 legacy-order-line">
+<td><select data-order-line-parent data-action="change->order-form#groupChanged" required {{ editable ? '' : 'disabled' }}><option value="">Выбрать продукт</option>{% for group in productGroups %}<option value="{{ group.id }}" {{ selected and selected.groupId == group.id ? 'selected' }}>{{ group.name }}</option>{% endfor %}</select></td>
+<td><select name="lines[{{ index }}][productId]" data-action="change->order-form#productChanged" required {{ not editable or not selected ? 'disabled' }}><option value="">Выбрать вариант</option>{% for product in selected ? selected.options : [] %}<option value="{{ product.id }}" data-price="{{ product.price }}" data-unit="{{ product.unit }}" {{ selected.productId == product.id ? 'selected' }}>{{ product.name }}</option>{% endfor %}</select></td>
+<td><input type="number" name="lines[{{ index }}][quantity]" min="0.001" step="0.001" value="{{ selected ? selected.quantity : '1.000' }}" data-action="input->order-form#recalculate" required {{ editable ? '' : 'readonly' }}> <span data-order-line-unit>{{ selected ? selected.unit : '' }}</span></td>
+<td><input type="number" name="lines[{{ index }}][unitPrice]" min="0" step="0.0001" value="{{ selected ? selected.unitPrice : '0.0000' }}" data-action="input->order-form#recalculate" required {{ editable ? '' : 'readonly' }}></td>
+<td data-order-form-target="vatColumn" hidden><input type="number" min="0" step="0.0001" data-order-line-vat-price data-action="change->order-form#vatPriceChanged" {{ editable ? '' : 'readonly' }}></td>
+<td data-order-form-target="fopColumn" hidden><input type="number" min="0" step="0.0001" data-order-line-fop-price data-action="change->order-form#fopPriceChanged" {{ editable ? '' : 'readonly' }}></td>
+<td><input type="number" name="lines[{{ index }}][discount]" min="-100" max="100" step="0.000001" value="0" data-action="input->order-form#recalculate" {{ editable ? '' : 'readonly' }}> %</td>
+<td class="rightAlign"><output data-order-line-total>0.00 грн</output></td>
+<td>{% if editable %}<button type="button" class="addbutton" data-action="order-form#remove">Удалить</button>{% endif %}</td>
+</tr>

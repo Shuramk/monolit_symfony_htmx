@@ -1,0 +1,25 @@
+<h2 id="variants">Цвета / варианты</h2>
+<div class="product-settings-toolbar">{% if is_granted('LEGACY_DIVISION', 1011) %}<a class="legacy-button" href="{{ path('product_settings_new', {parentId:product.id}) }}">Добавить цвет / вариант</a>{% endif %}<span>Названия, цены, сортировку и статус можно менять прямо в таблице.</span></div>
+{% if variants %}
+<form method="post" action="{{ path('product_settings_variants', {id:product.id}) }}" data-controller="product-table" data-action="submit->product-table#submit input->product-table#changed change->product-table#changed invalid->product-table#invalid:capture">
+<input name="_token" type="hidden" value="{{ csrf_token('session') }}">
+<div class="product-settings-toolbar">
+<label>Изменить все цены на <input type="text" inputmode="decimal" value="5" data-product-table-target="delta" aria-label="Величина изменения цены"></label>
+<select data-product-table-target="mode" aria-label="Единица изменения цены"><option value="amount">грн</option><option value="percent">%</option></select>
+<button type="button" data-action="product-table#adjust">Применить к таблице</button>
+<button type="button" data-product-table-target="reset" data-action="product-table#resetPrices" disabled>Сбросить цены</button>
+<button type="submit" class="legacy-button">Сохранить изменения</button>
+</div>
+<p class="product-table-message" role="status" aria-live="polite" data-product-table-target="message">Прибавление или уменьшение в грн / % применяется ко всем вариантам, включая отключённые. Проценты округляются до 4 знаков. До сохранения цены можно сбросить; для записи нажмите «Сохранить изменения».</p>
+<div class="product-table-wrap"><table class="product-table product-editable-table"><thead><tr><th>Наименование</th><th>Українською</th><th>Цена, грн</th><th>Сортировка</th><th>Статус</th></tr></thead><tbody>
+{% for variant in variants %}<tr data-product-table-target="row">
+<td><input type="hidden" data-product-field="id" value="{{ variant.id }}"><input type="hidden" data-product-field="version" value="{{ variant.edit_version }}"><input data-product-field="name" aria-label="Наименование варианта {{ loop.index }}" value="{{ variant.name }}" maxlength="510" required></td>
+<td><input data-product-field="nameUk" aria-label="Наименование українською варианта {{ loop.index }}" value="{{ variant.name_uk }}" maxlength="510"></td>
+<td><input type="number" data-product-field="price" data-product-table-target="price" aria-label="Цена варианта {{ loop.index }}" min="0" max="99999999.9999" step="0.0001" value="{{ variant.price }}" required></td>
+<td><input type="number" data-product-field="sorting" aria-label="Сортировка варианта {{ loop.index }}" min="0" max="2147483647" step="1" value="{{ variant.sorting }}" required></td>
+<td><select data-product-field="enabled" aria-label="Статус варианта {{ loop.index }}"><option value="1" {{ variant.enabled ? 'selected' }}>Активен</option><option value="0" {{ not variant.enabled ? 'selected' }}>Отключён</option></select></td>
+</tr>{% endfor %}
+</tbody></table></div>
+<p><button type="submit" class="legacy-button">Сохранить изменения</button></p>
+</form>
+{% else %}<p>Нет вариантов. Добавьте первый цвет кнопкой выше.</p>{% endif %}

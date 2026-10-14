@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+{% set groups = view.groups %}{% set query = view.query %}{% set includeDisabled = view.includeDisabled %}
+{% block title %}Настройки — Продукция{% endblock %}
+{% block body %}
+<main class="app-main product-settings">
+<h1>Настройки » Продукция</h1>
+<div class="product-settings-toolbar">
+{% if is_granted('LEGACY_DIVISION', 1011) %}<a class="legacy-button" href="{{ path('product_settings_new') }}">Добавить продукцию</a>{% endif %}
+<form method="get"><label>Поиск <input type="search" name="q" value="{{ query }}"></label> <label><input type="checkbox" name="includeDisabled" value="1" {{ includeDisabled ? 'checked' }}> Показывать отключённые</label> <button>Найти</button></form>
+</div>
+<form method="post" action="{{ path('product_settings_sorting') }}" data-controller="product-table" data-action="submit->product-table#submit input->product-table#changed change->product-table#changed invalid->product-table#invalid:capture">
+<input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+<div class="product-settings-toolbar"><button type="submit" class="legacy-button">Сохранить сортировку</button><span class="product-table-message" role="status" aria-live="polite" data-product-table-target="message">Сортировку групп можно менять в таблице. Меньшее число — выше в списке.</span></div>
+{% for type, title in {1:'Прессованная продукция',2:'Литая продукция',3:'Прочая продукция',4:'Энергоресурсы'} %}
+<h2>{{ title }}</h2>
+<div class="product-table-wrap"><table class="product-table"><thead><tr><th>Наименование</th><th>Українською</th><th>Ед.</th><th>Вес, кг</th><th>Сортировка</th><th>Цвета / варианты</th><th>Статус</th></tr></thead><tbody>
+{% for group in groups|filter(g => g.type == type) %}<tr class="{{ not group.enabled ? 'product-disabled' }}" data-product-table-target="row"><td><input type="hidden" data-product-field="id" value="{{ group.id }}"><input type="hidden" data-product-field="version" value="{{ group.edit_version }}"><a href="{{ path('product_settings_edit', {id:group.id}) }}">{{ group.name }}</a></td><td>{{ group.name_uk ?: '—' }}</td><td>{{ group.unit|replace({'<sup>2</sup>':'²','<sup>3</sup>':'³'}) }}</td><td>{{ group.weight_per_unit ?: '—' }}</td><td><input class="product-sorting-input" type="number" data-product-field="sorting" aria-label="Сортировка {{ group.name }}" value="{{ group.sorting }}" min="0" max="2147483647" step="1" required></td><td><a href="{{ path('product_settings_edit', {id:group.id}) }}#variants">{{ group.variants_count }} — открыть</a>{% if is_granted('LEGACY_DIVISION', 1011) %} <a class="product-add-variant" href="{{ path('product_settings_new', {parentId:group.id}) }}">+ Цвет / вариант</a>{% endif %}</td><td>{{ group.enabled ? 'Активна' : 'Отключена' }}</td></tr>
+{% else %}<tr><td colspan="7">Нет продукции</td></tr>{% endfor %}
+</tbody></table></div>
+{% endfor %}
+<p><button type="submit" class="legacy-button">Сохранить сортировку</button></p>
+</form>
+</main>
+{% endblock %}

@@ -1,0 +1,16 @@
+@page { size: auto; margin: 12.7mm; }
+.warehouse-inventory-page { background: #fff; color: #000; font: 12px/1.2 Arial, sans-serif; margin: 0; }
+.warehouse-inventory-document { width: 185mm; max-width: 100%; margin: 20px auto; }
+.warehouse-inventory-toolbar { display: flex; gap: 20px; align-items: center; padding: 12px; background: #eee; }
+.warehouse-inventory-group { margin-top: 15px; }
+.warehouse-inventory-group h2 { font: bold 12px/1.2 Arial, sans-serif; margin: 0; break-after: avoid; }
+.warehouse-inventory-group h2 span { float: right; }
+.warehouse-inventory-pallet { font-weight: bold; break-after: avoid; }
+.warehouse-inventory-group table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 2px solid #000; }
+.warehouse-inventory-group td, .warehouse-inventory-group th { text-align: left; border: 1px solid #000; padding: 2px 1px; overflow-wrap: anywhere; }
+.warehouse-inventory-group tr { break-inside: avoid; }
+@media print {
+    .warehouse-inventory-toolbar, .sf-toolbar { display: none !important; }
+    .warehouse-inventory-document { width: 100%; max-width: none; margin: 0; }
+    .warehouse-inventory-group thead { display: table-header-group; }
+}

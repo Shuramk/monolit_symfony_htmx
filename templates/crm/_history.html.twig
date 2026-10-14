@@ -1,0 +1,4 @@
+<h3>История {{ kind == 'deal' ? 'сделки' : 'задачи' }}</h3>
+<table class="product-table crm-history"><thead><tr><th>Дата</th><th>Кто изменил</th><th>Изменения</th></tr></thead><tbody>
+{% for entry in history %}<tr><td>{{ entry.happened_at|date('d-m-Y H:i:s') }}</td><td>{{ entry.author_name ?: 'Пользователь №' ~ entry.author_id }}</td><td>{% for line in entry.details %}<div class="crm-multiline">{{ line }}</div>{% endfor %}</td></tr>{% else %}<tr><td colspan="3">История отсутствует.</td></tr>{% endfor %}
+</tbody></table>

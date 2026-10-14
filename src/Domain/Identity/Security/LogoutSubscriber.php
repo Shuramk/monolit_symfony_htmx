@@ -2,6 +2,8 @@
 
 namespace App\Domain\Identity\Security;
 
+use App\Domain\Identity\Entities\User;
+
 use App\Domain\Identity\Repository\IdentitySessionRepository;
 use App\Domain\Identity\Audit\AuthenticationAuditRepository;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -12,14 +14,15 @@ final readonly class LogoutSubscriber implements EventSubscriberInterface {
     }
 
     public static function getSubscribedEvents(): array {
-        return [LogoutEvent::class => "onLogout"];
+        // Read the current ID before Symfony invalidates the PHP session.
+        return [LogoutEvent::class => ['onLogout', 64]];
     }
 
     public function onLogout(LogoutEvent $event): void {
         $user = $event->getToken()->getUser();
 
-        if ($user instanceof IdentityUser) {
-            $this->identitySessionRepository->remove($user->getId());
+        if ($user instanceof User && $event->getRequest()->hasSession()) {
+            $this->identitySessionRepository->remove($user->getId(), $event->getRequest()->getSession()->getId());
             $this->authenticationAuditRepository->record("logout", $user->getId(), $user->getUserIdentifier(), $event->getRequest());
         }
     }

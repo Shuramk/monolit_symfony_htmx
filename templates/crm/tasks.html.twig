@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+{% block title %}CRM — {{ director ? 'Задачи (директор)' : 'Задачи' }}{% endblock %}
+{% block body %}
+{% set route = director ? (archive ? 'crm_director_archive' : 'crm_director_tasks') : (archive ? 'crm_tasks_archive' : 'crm_tasks') %}
+<main class="app-main product-settings crm-page"><h3>CRM » {{ director ? 'Задачи (директор)' : 'Задачи' }}{{ archive ? ' » Выполненные / отменённые' }}</h3>
+<div class="crm-toolbar">{% if is_granted('LEGACY_DIVISION',director ? 1756 : 1751) %}<a class="legacy-button" href="{{ path(director ? 'crm_director_task_new' : 'crm_task_new') }}">Создать задачу</a>{% endif %}
+{% if is_granted('LEGACY_DIVISION',director ? 1755 : 1750) %}<a href="{{ path(director ? 'crm_director_tasks' : 'crm_tasks') }}">Активные</a>{% endif %}
+{% if is_granted('LEGACY_DIVISION',director ? 1759 : 1754) %}<a href="{{ path(director ? 'crm_director_archive' : 'crm_tasks_archive') }}">Выполненные / отменённые</a>{% endif %}
+<form method="get"><input name="q" value="{{ q }}" placeholder="Поиск" aria-label="Поиск задач">
+{% if not director and not archive %}<select name="scope" aria-label="Мои задачи"><option value="mine" {{ scope == 'mine' ? 'selected' }}>Для меня</option><option value="from-me" {{ scope == 'from-me' ? 'selected' }}>От меня / наблюдаемые</option><option value="all" {{ scope == 'all' ? 'selected' }}>Все мои</option></select>{% endif %}
+<select name="executor" aria-label="Исполнитель"><option value="">Все исполнители</option>{% for user in users %}<option value="{{ user.id }}" {{ executor == user.id ? 'selected' }}>{{ user.display_name }}</option>{% endfor %}</select>
+<select name="author" aria-label="Автор"><option value="">Все авторы</option>{% for user in users %}<option value="{{ user.id }}" {{ author == user.id ? 'selected' }}>{{ user.display_name }}</option>{% endfor %}</select>
+{% if archive %}<select name="state" aria-label="Состояние"><option value="">Все состояния</option>{% for value,title in {completed:'Выполненные',cancelled:'Отменённые',hidden:'Скрытые'} %}<option value="{{ value }}" {{ state == value ? 'selected' }}>{{ title }}</option>{% endfor %}</select>{% endif %}<button type="submit">Найти</button></form></div>
+<p>Задач: {{ page.total }}</p>{% include 'components/_pagination.html.twig' with {current:page.current,pages:page.pages,route:route,params:{q:q,executor:executor,author:author,state:state,scope:scope}} only %}
+<table class="product-table crm-list"><thead><tr><th>№</th><th>Срок</th><th>Описание</th><th>Исполнитель</th><th>Автор</th><th>Статус</th></tr></thead><tbody>{% for task in page.rows %}
+<tr class="{{ task.unread ? 'crm-unread' }}"><td><a href="{{ path(director ? 'crm_director_task_show' : 'crm_task_show',{id:task.id}) }}">{{ task.id }}</a>{{ task.unread ? ' ●' }}</td><td class="{{ task.due_at and date(task.due_at) < date() and not task.completed_at and not task.cancelled ? 'crm-overdue' }}">{{ task.due_at ? task.due_at|date('d-m-Y H:i') : '—' }}</td><td class="crm-multiline">{{ task.text }}{% if task.last_comment %}<p>{{ task.last_comment }}</p>{% endif %}</td><td>{{ task.executor_name ?: 'Пользователь №' ~ task.executor_id }}</td><td>{{ task.author_name ?: 'Пользователь №' ~ task.author_id }}</td><td>{{ task.hidden ? 'Скрыта' : (task.cancelled ? 'Отменена' : (task.completed_at ? 'Выполнена' : 'В работе')) }}</td></tr>
+{% else %}<tr><td colspan="6">Задач нет.</td></tr>{% endfor %}</tbody></table></main>
+{% endblock %}

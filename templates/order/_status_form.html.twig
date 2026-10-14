@@ -1,0 +1,20 @@
+<details class="order-status-change">
+    <summary>Изменить статус</summary>
+    <form class="order-status-form" method="post" action="{{ path('order_status_change', {id: order.id}) }}"
+          data-controller="order-status json-form"
+          data-action="submit->json-form#submit change->order-status#toggle input->json-form#clearValidity">
+        <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+        <input type="hidden" name="version" value="{{ order.version }}">
+        {% for status in order.statusOptions %}
+            <label class="order-status-option legacy-status-{{ status.value }}">
+                <input type="radio" name="status" value="{{ status.value }}" required> {{ status.title }}
+            </label>
+        {% endfor %}
+        <label class="order-status-reason" data-order-status-target="reason" hidden>
+            Причина отмены
+            <textarea name="comment" maxlength="20000" rows="3" data-order-status-target="comment"></textarea>
+        </label>
+        <button type="submit">Сохранить</button>
+        <p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+    </form>
+</details>

@@ -3,7 +3,8 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    session:
+        gc_maxlifetime: !php/const App\Domain\Identity\Entities\User::SESSION_IDLE_TIMEOUT_SECONDS
 
     #esi: true
     #fragments: true

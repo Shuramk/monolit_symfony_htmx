@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class ProductCatalogControllerTest extends WebTestCase {
     use IdentityTestUser;
 
-    public function testCatalogRequiresItsOwnLegacyPermissionAndReturnsAnHtmxFragment(): void {
+    public function testCatalogRequiresItsOwnPermissionAndReturnsAnHtmxFragment(): void {
         $client = static::createClient();
         $this->authenticate($client);
         $client->followRedirect();
@@ -27,5 +27,6 @@ final class ProductCatalogControllerTest extends WebTestCase {
         $client->request("GET", "/products?q=%D0%9A%D0%B8%D1%80%D0%BF%D0%B8%D1%87", [], [], ["HTTP_HX-Request" => "true"]);
         self::assertResponseIsSuccessful();
         self::assertStringContainsString("Кирпич", $client->getResponse()->getContent());
+        self::assertSame(1677, (int) $connection->fetchOne("SELECT COUNT(*) FROM products"));
     }
 }

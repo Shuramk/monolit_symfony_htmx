@@ -1,0 +1,86 @@
+<h3 class="legacy-order-breadcrumb"><a href="{{ path('order_list') }}">Заказы</a> » Список заказов</h3>
+    <div class="legacy-orders-toolbar">
+        <a class="legacy-order-create-button" href="{{ path('order_new') }}">Создать новый заказ</a>
+        <div class="legacy-orders-search">
+            {% include 'order/_search.html.twig' %}
+            <input id="order-search" type="search" name="q" form="order-list-filters" value="{{ page.query }}" autocomplete="off" aria-label="Номер заказа, покупатель или телефон">
+        </div>
+    </div>
+<form id="order-list-filters" class="legacy-orders-controls" method="get" action="{{ path('order_list') }}"
+      hx-get="{{ path('order_list') }}" hx-target="#order-list" hx-swap="innerHTML"
+      hx-push-url="true" hx-trigger="submit, input changed delay:300ms from:#order-search">
+    <input type="hidden" name="sort" value="{{ page.sort.value }}">
+    <input type="hidden" name="direction" value="{{ page.direction }}">
+    {% if page.search %}
+        {% for field, value in page.filterParams.search %}<input type="hidden" name="search[{{ field }}]" value="{{ value }}">{% endfor %}
+    {% endif %}
+    <div class="legacy-orders-filter-row">
+        <details class="legacy-orders-filter">
+            <summary>Заказы по статусам</summary>
+            <div class="legacy-orders-filter-popup">
+                <input type="hidden" name="statuses[]" value="">
+                {% for status in page.statusOptions %}
+                    <label class="legacy-status-{{ status.value }}">
+                        <input type="checkbox" name="statuses[]" value="{{ status.value }}"{{ status in page.statuses ? ' checked' }}>
+                        {{ status.title }}
+                    </label>
+                {% endfor %}
+                <button type="submit">Показать</button>
+            </div>
+        </details>
+        <div class="legacy-orders-selected">Выбраны:
+            {% for status in page.statuses %}<span class="legacy-status-{{ status.value }}">{{ status.title }}</span>{{ not loop.last ? ', ' }}{% endfor %}
+        </div>
+    </div>
+    <div class="legacy-orders-filter-row">
+        <details class="legacy-orders-filter">
+            <summary>Заказы по менеджерам</summary>
+            <div class="legacy-orders-filter-popup">
+                {% for manager in page.managerOptions %}
+                    <label><input type="checkbox" name="managers[]" value="{{ manager.id }}"{{ manager.id in page.managerIds ? ' checked' }}> {{ manager.name }}</label>
+                {% else %}<p>Менеджеры не найдены.</p>{% endfor %}
+                <button type="submit">Показать</button>
+            </div>
+        </details>
+        <div class="legacy-orders-selected">Выбраны:
+            {% set separator = '' %}
+            {% for manager in page.managerOptions %}{% if manager.id in page.managerIds %}{{ separator }}{{ manager.name }}{% set separator = ', ' %}{% endif %}{% endfor %}
+        </div>
+    </div>
+    <noscript><button type="submit">Найти заказ</button></noscript>
+</form>
+{% include 'order/_pagination.html.twig' %}
+        <div class="legacy-grid-wrap">
+            <table class="legacy-grid legacy-orders-grid">
+                <colgroup>
+                    <col class="legacy-order-number-column">
+                    <col class="legacy-order-date-column">
+                    <col class="legacy-order-date-column">
+                    <col class="legacy-order-customer-column">
+                    <col>
+                    <col class="legacy-order-loyalty-column">
+                    <col class="legacy-order-readiness-column">
+                    <col class="legacy-order-status-column">
+                </colgroup>
+                <thead hx-boost="true" hx-target="#order-list" hx-swap="innerHTML" hx-push-url="true">
+                    <tr class="gridsheader">
+                        {% for key, title in {id: 'Номер заказа', createdAt: 'Дата заказа', desiredAt: 'Дата доставки', customer: 'Покупатель', address: 'Адрес доставки', loyalty: 'Лояльность', readiness: 'Готовность', status: 'Статус'} %}
+                            {% if key in ['id', 'createdAt', 'desiredAt', 'customer', 'status'] %}
+                                {% set active = page.sort.value == key %}
+                                <th scope="col" aria-sort="{{ active ? (page.direction == 'ASC' ? 'ascending' : 'descending') : 'none' }}">
+                                    <a data-sort="{{ key }}" href="{{ path('order_list', page.filterParams|merge({sort: key, direction: page.direction == 'DESC' ? 'ASC' : 'DESC', page: 1})) }}">
+                                        {% if active %}<span class="legacy-orders-sort-arrow" aria-hidden="true">{{ page.direction == 'ASC' ? '▴' : '▾' }}</span>{% endif %}{{ title }}
+                                    </a>
+                                </th>
+                            {% else %}
+                                <th scope="col">{{ title }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="order-list-rows">
+                    {% include "order/_rows.html.twig" with {orders: page.orders} %}
+                </tbody>
+            </table>
+        </div>
+{% include 'order/_pagination.html.twig' %}

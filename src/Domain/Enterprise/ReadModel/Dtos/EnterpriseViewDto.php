@@ -15,6 +15,7 @@ final readonly class EnterpriseViewDto {
         public ?string $address,
         public ?string $email,
         public array $phones,
+        public ?string $website = null,
     ) {
     }
 }

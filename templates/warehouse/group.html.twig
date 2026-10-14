@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+{% block title %}Склад — {{ view.group.name }}{% endblock %}
+{% block body %}
+{% set breakdown = is_granted('WAREHOUSE_BREAKDOWN') %}
+{% set add = is_granted('WAREHOUSE_ADD') %}
+{% set delete = is_granted('WAREHOUSE_DELETE') %}
+<main class="app-main warehouse-details" data-controller="warehouse" data-warehouse-csrf-value="{{ csrf_token('session') }}" data-action="click@window->warehouse#outside keydown.esc@window->warehouse#closeAll resize@window->warehouse#closeAll scroll@window->warehouse#closeAll invalid->warehouse#invalid:capture input->warehouse#clearValidity">
+<h1><a href="{{ path('warehouse_products') }}">Склад</a> » <a href="{{ path('warehouse_products') }}">Продукция</a> » {{ view.group.name }}</h1>
+<div class="warehouse-detail-caption"><em>В скобках указано количество, НЕ указанное в задачах на отгрузку</em><button type="button" class="legacy-button" data-action="warehouse#openNeed">Задачи</button></div>
+<p data-warehouse-target="notice" class="warehouse-message" role="status" hidden></p>
+<div class="warehouse-detail-wrap"><table class="warehouse-detail-table">
+<colgroup><col style="width:35px"><col style="width:350px"><col style="width:80px"><col style="width:45px"><col style="width:150px">{% if breakdown %}<col style="width:95px"><col style="width:85px">{% endif %}<col style="width:95px"><col style="width:170px">{% if add %}<col style="width:80px">{% endif %}{% if delete %}<col style="width:80px">{% endif %}<col style="width:80px"><col style="width:80px"></colgroup>
+<thead><tr><th>№</th><th>Цвет</th><th>Цена</th><th>Ед.<br>изм.</th><th>Склад</th>{% if breakdown %}<th>Офис</th><th>Цех</th>{% endif %}<th>В <br>переложке</th><th>В задачах / <span class="warehouse-ordered">В заказах</span></th>{% if add %}<th>Добавить</th>{% endif %}{% if delete %}<th>Списать</th>{% endif %}<th></th><th>min</th></tr></thead><tbody>
+{% for product in view.products %}
+<tr><td class="warehouse-number">{{ loop.index }}</td><td>{{ product.name }}</td><td class="warehouse-price">{{ product.price }}</td><td class="warehouse-unit">{{ product.unit }}</td><td class="warehouse-stock">{{ breakdown ? product.stock : product.storage_workshop }} (<span>{{ product.unallocated }}</span>)</td>
+{% if breakdown %}<td class="warehouse-stock">{{ product.storage_office }}</td><td class="warehouse-stock">{{ product.storage_workshop }}</td>{% endif %}
+<td class="warehouse-cover">{% if product.cover_quantity != '0' %}<a href="{{ path('warehouse_production',{id:view.group.id}) }}#cover">{{ product.cover_quantity }} {{ product.unit }}</a>{% endif %}</td>
+<td class="warehouse-tasks">
+{% if view.orders[product.id] is defined or view.tasks[product.id] is defined %}
+{% include 'warehouse/_detail_hint.html.twig' with {kind:'tasks',rows:view.tasks[product.id]|default([]),value:product.task_quantity,product:product,group:view.group} only %} /
+{% include 'warehouse/_detail_hint.html.twig' with {kind:'orders',rows:view.orders[product.id]|default([]),value:product.reserved,product:product,group:view.group} only %}
+{% endif %}
+</td>
+{% if add %}<td class="warehouse-operation"><button type="button" class="warehouse-add-icon" data-action="warehouse#openStock" data-url="{{ path('warehouse_add',{id:product.id}) }}" data-name="{{ view.group.name }} {{ product.name }}" data-unit="{{ product.unit }}" data-add="1" aria-label="Добавить {{ product.name }}">+</button></td>{% endif %}
+{% if delete %}<td class="warehouse-operation"><button type="button" class="warehouse-delete-icon" data-action="warehouse#openStock" data-url="{{ path('warehouse_delete',{id:product.id}) }}" data-name="{{ view.group.name }} {{ product.name }}" data-unit="{{ product.unit }}" data-add="0" aria-label="Списать {{ product.name }}">×</button></td>{% endif %}
+<td class="warehouse-history"><a class="warehouse-history-link" href="{{ path('warehouse_history',{id:product.id}) }}">история</a></td><td>{% if is_granted('WAREHOUSE_MINIMUM') %}<input type="text" inputmode="decimal" class="warehouse-minimum" value="{{ product.min_quantity is not null ? product.min_quantity|number_format(2,'.','') : '' }}" data-warehouse-minimum data-url="{{ path('warehouse_minimum',{id:product.id}) }}" data-version="{{ product.edit_version }}" data-action="focus->warehouse#rememberMinimum blur->warehouse#saveMinimum keydown.enter->warehouse#saveMinimum" aria-label="Минимальный остаток {{ product.name }}">{% else %}{{ product.min_quantity is not null ? product.min_quantity|number_format(2,'.','') : '' }}{% endif %}</td></tr>
+{% else %}<tr><td colspan="13">Нет цветов / вариантов</td></tr>{% endfor %}
+</tbody></table></div>
+{% if add or delete %}
+<dialog data-warehouse-target="stockDialog" class="warehouse-dialog"><button type="button" class="warehouse-dialog-close" data-action="warehouse#closeDialog" aria-label="Закрыть">×</button><h2 data-stock-title></h2>
+<form data-action="submit->warehouse#submitStock"><input type="hidden" name="operationId"><label>Количество: <input type="number" min="0.001" max="99999999.999" step="0.001" name="quantity" required> <span data-stock-unit></span></label>
+{% if breakdown %}<label>Склад: <select name="storage"><option value="1">Офис</option><option value="2" selected>Цех</option></select></label>{% else %}<input type="hidden" name="storage" value="2">{% endif %}
+<fieldset data-stock-production><legend>Производство</legend><p><sup>*</sup>Выбор смены — опциональное поле. Оставив его пустым, работники без оплаты.</p>
+<label>Смена: <select name="shift"><option value="">Не выбрана</option><option value="211">Пресс 1, смена 1</option><option value="212">Пресс 1, смена 2</option><option value="221">Пресс 2, смена 1</option><option value="222">Пресс 2, смена 2</option><option value="111">Литье, смена 1</option></select></label>
+<label>Дата изготовления: <input type="date" name="date" value="{{ 'now'|date('N') == 1 ? '-2 days'|date('Y-m-d') : '-1 day'|date('Y-m-d') }}"></label></fieldset>
+<label>Комментарий: <textarea name="comment" rows="3" maxlength="255"></textarea></label><p class="warehouse-form-error" role="alert" hidden></p><button type="submit" class="legacy-button" data-stock-submit>Добавить</button></form></dialog>
+{% endif %}
+<dialog data-warehouse-target="needDialog" class="warehouse-dialog"><button type="button" class="warehouse-dialog-close" data-action="warehouse#closeDialog" aria-label="Закрыть">×</button><h2>Необходимо произвести</h2>
+<form data-action="submit->warehouse#createTasks" action="{{ path('warehouse_production_create',{id:view.group.id}) }}" data-print-url="{{ path('warehouse_need_print',{id:view.group.id}) }}" data-need-url="{{ path('warehouse_need',{id:view.group.id}) }}"><input type="hidden" name="operationId">
+<table class="warehouse-need-table"><thead><tr><th>Наименование</th><th>Кол-во</th><th></th></tr></thead><tbody>{% for product in view.products %}<tr><td>{{ view.group.name }} {{ product.name }}</td><td>{{ product.needed }} {{ product.unit }}</td><td><input type="checkbox" data-need-choice value="{{ product.id }}" data-quantity="{{ product.needed }}" aria-label="Выбрать {{ product.name }}"></td></tr>{% endfor %}</tbody></table>
+<div class="warehouse-need-actions"><button type="button" class="legacy-button" data-action="warehouse#printNeed">Напечатать</button>{% if is_granted('WAREHOUSE_PRODUCTION') %}<label>Пресс: <select name="press"><option value="1">1</option><option value="2">2</option><option value="0">Литье</option></select></label><label>Дата: <input type="date" name="date" value="{{ 'now'|date('Y-m-d') }}" required></label><button type="submit" class="legacy-button">Поставить задачи</button>{% endif %}<a href="{{ path('warehouse_production',{id:view.group.id}) }}">Задачи / переложка</a></div>
+<p class="warehouse-form-error" role="alert" hidden></p></form></dialog>
+</main>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% if snapshot.context.before is defined %}
+    <div class="order-changelog-changes">
+        {% for change in changes %}
+            <div>{{ change|nl2br }}</div>
+        {% else %}
+            <div>Состав и данные заказа не изменились.</div>
+        {% endfor %}
+        <details class="order-changelog-full">
+            <summary>Полный снимок</summary>
+            <div class="order-changelog-full-section">
+                <b>До изменения:</b>
+                {% include 'order/_changelog_snapshot.html.twig' with {snapshot: snapshot.context.before} only %}
+            </div>
+            <div class="order-changelog-full-section">
+                <b>После изменения:</b>
+                {% include 'order/_changelog_snapshot.html.twig' with {snapshot: snapshot} only %}
+            </div>
+        </details>
+    </div>
+{% else %}
+    {% include 'order/_changelog_snapshot.html.twig' with {snapshot: snapshot} only %}
+{% endif %}

@@ -1,0 +1,13 @@
+{% if line.stock is not null %}
+    {{ line.stock }} (<span class="legacy-order-free-stock">{{ line.freeStock }}</span>)
+    ({% if line.stockOrders %}<span class="warehouse-stock-wrapper"><button type="button" class="warehouse-detail-hint warehouse-ordered" data-warehouse-stock-button data-action="warehouse#toggle" aria-expanded="false" aria-controls="order-stock-{{ index }}">{{ line.reserved }}</button><span id="order-stock-{{ index }}" class="warehouse-stock-popover warehouse-detail-popover" data-warehouse-target="popover" role="dialog" aria-label="В заказах: {{ line.name }}" hidden>
+            <strong>{{ line.name }}</strong>
+            <table><thead><tr><th>№ заказа</th><th>Дата доставки</th><th>Кол-во</th></tr></thead><tbody>
+            {% for row in line.stockOrders %}<tr>
+                <td><a href="{{ path('order_show', {id: row.order_id}) }}">№{{ row.order_id }}</a></td>
+                <td>{{ row.delivery_date ? row.delivery_date|date('d-m-Y') : '—' }}</td>
+                <td>{{ row.quantity }} {{ line.measure }}</td>
+            </tr>{% endfor %}
+            </tbody></table>
+        </span></span>{% else %}<span class="warehouse-ordered">{{ line.reserved }}</span>{% endif %}) {{ line.measure }}
+{% else %}<span title="Продукция отсутствует в текущем каталоге">—</span>{% endif %}

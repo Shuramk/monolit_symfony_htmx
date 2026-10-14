@@ -1,0 +1,124 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Заказ №{{ order.id }}{% endblock %}
+
+{% block body %}
+<main class="app-main legacy-order-card" data-controller="warehouse" data-action="click@window->warehouse#outside keydown.esc@window->warehouse#closeAll resize@window->warehouse#closeAll scroll@window->warehouse#closeAll">
+    <div class="legacy-order-workspace">
+        <h3 class="legacy-order-breadcrumb"><a href="{{ path('order_list') }}">Заказы</a> » Заказ №{{ order.id }}</h3>
+        <div class="legacy-order-head">
+            <div>Время создания заказа {{ order.createdAt|date('d-m-Y H:i:s') }}.
+                <div><b>Дата выполнения заказа:</b> {{ order.desiredDate|date('d-m-Y') }}</div>
+            </div>
+            <div class="legacy-order-actions">
+                <a class="legacy-order-print-button" href="{{ path('order_print', {id: order.id}) }}" target="_blank" rel="noopener">Печать заказа</a>
+                {% if order.state.displayStatus.value != 'cancelled' %}
+                    <a href="{{ path('order_edit', {id: order.id}) }}">Редактировать заказ</a>
+                {% endif %}
+            </div>
+        </div>
+        {% if order.markup > 0 and order.markup < 20 %}
+            <p class="legacy-order-markup">Наценка на ФОП {{ order.markup }}% внесена в цену за единицу продукции.</p>
+        {% endif %}
+        <div class="legacy-order-lines-wrap" data-action="scroll->warehouse#closeAll">
+        <table class="grid legacy-order-lines">
+            <colgroup>
+                <col class="legacy-card-no"><col><col class="legacy-card-quantity">
+                <col class="legacy-card-price">{% if order.markup > 0 %}<col class="legacy-card-price">{% endif %}<col class="legacy-card-total">
+                <col class="legacy-card-weight"><col class="legacy-card-stock">
+            </colgroup>
+            <thead><tr class="gridsheader">
+                <th scope="col" aria-label="Номер строки"></th><th scope="col">Наименование</th><th scope="col">Количество<br>(отгружено)</th>
+                <th scope="col">Цена за единицу</th>
+                {% if order.markup > 0 %}<th scope="col">{{ order.markup == 20 ? 'с НДС' : 'с наценкой ФОП' }}</th>{% endif %}
+                <th scope="col">Стоимость<br>(без НДС)</th>
+                <th scope="col" class="legacy-order-weight">Вес</th><th scope="col" class="legacy-order-stock">Склад*</th>
+            </tr></thead>
+            <tbody>
+            {% for line in order.lines %}
+                <tr class="{{ loop.index is odd ? 'gridline' : 'gridline1' }}">
+                    <td>{{ loop.index }}</td><td>{{ line.name }}</td>
+                    <td class="centerAlign">{{ line.quantity }} ({{ line.shippedQuantity }}) {{ line.measure }}</td>
+                    <td class="centerAlign">{{ line.unitPrice }}</td>
+                    {% if order.markup > 0 %}<td class="rightAlign">{{ line.unitPriceWithMarkup }}</td>{% endif %}
+                    <td class="rightAlign">{{ line.total }}</td>
+                    <td class="legacy-order-weight">{{ line.weight }}т</td>
+                    <td class="legacy-order-stock">{% include 'order/_stock.html.twig' with {line: line, index: loop.index} only %}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="{{ order.markup > 0 ? 8 : 7 }}">Позиции отсутствуют.</td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><th colspan="{{ order.markup > 0 ? 5 : 4 }}" scope="row" class="rightAlign">Итого:</th><td class="rightAlign"><b>{{ order.goodsTotal }} грн</b></td>
+                    <td class="legacy-order-weight legacy-order-weight-total">{{ order.totalWeight }}т</td>
+                    <td class="legacy-order-stock legacy-order-stock-legend"><sup>*</sup>(свободные)<br><span class="warehouse-ordered">(в заказах)</span>.</td>
+                </tr>
+                {% if order.markup == 20 %}
+                    <tr><th colspan="5" scope="row" class="rightAlign">Бн 20%:</th><td class="rightAlign"><b>{{ order.vatAmount }} грн</b></td><td colspan="2"></td></tr>
+                    <tr><th colspan="5" scope="row" class="rightAlign">Итого с бн:</th><td class="rightAlign"><b>{{ order.goodsTotalWithMarkup }} грн</b></td><td colspan="2"></td></tr>
+                {% endif %}
+            </tfoot>
+        </table>
+        </div>
+        <div class="legacy-order-totals">
+            <div>Отгружено на сумму: <b>{{ order.shippedAmount }} грн</b></div>
+            <dl class="legacy-order-payment-totals">
+                <dt>Оплачено:</dt><dd>{{ order.paidAmount }} грн</dd>
+                <dt>К оплате:</dt><dd>{{ order.remainingAmount }} грн</dd>
+            </dl>
+        </div>
+        {% if order.state.displayStatus.value != 'cancelled' and is_granted('LEGACY_DIVISION', 228) %}
+            {% include 'order/_payment_form.html.twig' %}
+        {% endif %}
+        <div class="legacy-order-delivery">
+            <dl class="legacy-order-delivery-totals">
+                <dt>Стоимость доставки{{ order.markup == 20 ? ' с бн' : '' }}:</dt><dd>{{ order.shippingCost }} грн</dd>
+                <dt>Оплаченные доставки:</dt><dd>{{ order.shipmentPayment }} грн</dd>
+            </dl>
+        </div>
+        {% if order.state.displayStatus.value != 'cancelled' and is_granted('LEGACY_DIVISION', 227) %}
+            {% include 'order/_payment_form.html.twig' with {delivery: true} %}
+        {% endif %}
+        <div class="legacy-order-columns">
+            <section class="legacy-order-customer-panel">
+                <h3>Информация о заказчике</h3>
+                <dl class="legacy-order-customer-details">
+                    <dt>Заказчик:</dt><dd>{{ order.customerName }}</dd>
+                    <dt>Телефон:</dt><dd>{% if order.customerPhone %}<a href="tel:{{ order.customerPhone }}">{{ order.customerPhone }}</a>{% else %}—{% endif %}</dd>
+                </dl>
+                <h3>Адрес доставки</h3><p>{{ order.shippingAddress ?: '—' }}</p>
+            </section>
+            <section class="legacy-order-status-panel">
+                <p>Статус заказа:<br><span class="legacy-status-{{ order.state.displayStatus.value }}">{{ order.state.displayStatus.title }}</span></p>
+                <p>{% if order.state.fullyShipped %}Полностью отгружен.{% endif %} {% if order.state.fullyPaid %}Полностью оплачен.{% endif %}</p>
+                {% if is_granted('LEGACY_DIVISION', 229) and order.statusOptions %}
+                    {% include 'order/_status_form.html.twig' %}
+                {% endif %}
+            </section>
+        </div>
+        <h3>История работы с заказом</h3>
+        <table class="grid legacy-order-history">
+        <colgroup><col class="legacy-order-history-date"><col></colgroup>
+        <tbody>
+        {% for entry in order.statusHistory %}
+            <tr class="{{ loop.index is odd ? 'gridline' : 'gridline1' }}">
+                <td>{{ entry.date|date('d-m-Y H:i:s') }}</td>
+                <td>
+                    {% if entry.snapshot %}
+                        <details class="order-changelog-entry">
+                            <summary>{{ entry.comment }}{% if entry.user %} ({{ entry.user }}){% endif %}</summary>
+                            {% include 'order/_changelog_details.html.twig' with {snapshot: entry.snapshot, changes: entry.changes} only %}
+                        </details>
+                    {% else %}
+                        {{ entry.comment|nl2br }}{% if entry.user %} ({{ entry.user }}){% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr><td>История отсутствует.</td></tr>
+        {% endfor %}
+        </tbody></table>
+    </div>
+</main>
+{% endblock %}

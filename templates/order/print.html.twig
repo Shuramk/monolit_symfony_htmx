@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Заказ №{{ order.id }} — печать</title>
+    <link rel="icon" href="{{ asset('favicon.png') }}">
+    {{ importmap('app') }}
+    <link rel="stylesheet" href="{{ asset('styles/order_print.css') }}">
+</head>
+<body class="order-print-page" data-controller="order-print">
+    <div class="order-print-toolbar">
+        <button type="button" data-action="order-print#print">Печатать</button>
+        <label><input type="checkbox" data-action="order-print#togglePaid"> Оплачено</label>
+        <a href="{{ path('order_show', {id: order.id}) }}">Вернуться к заказу</a>
+    </div>
+    <article class="order-print-document">
+        <header class="order-print-enterprise">
+            <img class="order-print-logo" src="{{ asset('images/monolit-logo.png') }}" width="45" height="45" alt="Монолит">
+            <div class="order-print-enterprise-name">{{ (order.enterprise.displayName ?: order.enterprise.shortName)|replace({'<br>': "\n", '<br/>': "\n", '<br />': "\n"})|striptags }}</div>
+            <div class="order-print-contacts">
+                {% for phone in order.enterprise.phones|filter(phone => phone.kind == 'sales')|slice(0, 3) %}<div>{{ phone.number|phone_format }}</div>{% endfor %}
+                {% if order.enterprise.address %}<div class="order-print-address">{% for part in order.enterprise.address|replace({'<br>': "\n", '<br/>': "\n", '<br />': "\n"})|striptags|split("\n") %}{% if part|trim %}<div>{{ part|trim }}</div>{% endif %}{% endfor %}</div>{% endif %}
+                {% if order.enterprise.website %}<div>{{ order.enterprise.website }}</div>{% endif %}
+                {% if order.enterprise.email %}<div>{{ order.enterprise.email }}</div>{% endif %}
+            </div>
+        </header>
+        <div class="order-print-heading">
+            <h1>ЗАКАЗ №{{ order.id }}</h1><div class="order-print-date">{{ order.createdDate }}</div>
+            <div class="order-print-desired-label">Желаемая дата доставки:</div><div class="order-print-date">{{ order.desiredDate }}</div>
+        </div>
+        <div class="order-print-customer">
+            <span>Заказчик:</span><div class="order-print-customer-name">{{ order.customerName }}{% if order.customerPhone %}, тел. {{ order.customerPhone|phone_format }}{% endif %}</div>
+            <div class="order-print-shipping-address">{{ order.shippingAddress ?: '' }}</div>
+        </div>
+        <table class="order-print-items">
+            <colgroup><col class="print-number"><col><col class="print-unit"><col class="print-quantity"><col class="print-price"><col class="print-amount"></colgroup>
+            <thead><tr>
+                <th scope="col">№</th><th scope="col">Наименование</th><th scope="col">Ед. изм.</th><th scope="col">Кол-во</th>
+                <th scope="col">Цена{% if order.vat is not null %}<br>(без НДС){% endif %}, грн</th>
+                <th scope="col">Сумма{% if order.vat is not null %}<br>(без НДС){% endif %}, грн</th>
+            </tr></thead>
+            <tbody>
+            {% for line in order.lines %}
+                <tr><td>{{ loop.index }}</td><td class="print-product-name">{{ line.name }}</td><td>{{ line.unit }}</td><td class="print-numeric"><b>{{ line.quantity }}</b></td><td class="print-numeric">{{ line.unitPrice }}</td><td class="print-numeric">{{ line.total }}</td></tr>
+            {% else %}<tr><td colspan="6">Позиции отсутствуют.</td></tr>{% endfor %}
+            </tbody>
+            <tbody class="order-print-totals">
+                <tr><th scope="row" colspan="5">Итого:</th><td>{{ order.subtotal }}</td></tr>
+                {% if order.vat is not null %}
+                    <tr><th scope="row" colspan="5">НДС 20%:</th><td>{{ order.vat }}</td></tr>
+                    <tr><th scope="row" colspan="5">Итого с НДС:</th><td>{{ order.total }}</td></tr>
+                {% endif %}
+                <tr><th scope="row" colspan="5">Оплачено:</th><td>{{ order.paid }}</td></tr>
+                <tr><th scope="row" colspan="5">К оплате:</th><td>{{ order.remaining }}</td></tr>
+            </tbody>
+        </table>
+        <div class="order-print-notes">
+            <p class="order-print-note"><sup>*</sup>В случае самовывоза или доставки, совершаемой наемным транспортом, администрация ПП «Монолит» за сохранность и целостность продукции ответственности не несет.</p>
+            <p class="order-print-note"><sup>**</sup>Возвратная продукция принимается только при наличии накладной.</p>
+        </div>
+        <footer class="order-print-signatures">
+            <div><span>Менеджер</span><div class="order-print-signature">{{ order.managerName }}</div></div>
+            <div class="order-print-customer-signature"><span>Заказчик</span><div class="order-print-signature">&nbsp;</div></div>
+        </footer>
+        <img class="order-print-paid" src="{{ asset('images/order-paid.png') }}" alt="Оплачено" data-order-print-target="stamp" hidden>
+    </article>
+</body>
+</html>

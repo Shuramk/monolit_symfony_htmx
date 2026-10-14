@@ -1,0 +1,105 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ edit is defined ? 'Редактирование заказа №' ~ edit.order.id : 'Создание нового заказа' }}{% endblock %}
+
+{% block body %}
+<main class="app-main legacy-order-form-page">
+    {% set editing = edit is defined %}
+    {% set currentMarkup = editing ? edit.order.markup : 0 %}
+    <h3 class="legacy-order-breadcrumb"><a href="{{ path('order_list') }}">Заказы</a> »
+        {% if editing %}<a href="{{ path('order_show', {id: edit.order.id}) }}">Заказ №{{ edit.order.id }}</a> » Редактирование
+        {% else %}<a href="{{ path('order_list') }}">Список заказов</a> » Создание нового заказа{% endif %}
+    </h3>
+
+    <form method="post" action="{{ editing ? path('order_update', {id: edit.order.id}) : path('order_draft') }}" class="legacy-order-form" data-controller="order-form json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity" data-order-form-products-value="{{ productsByParent|json_encode }}">
+        <input type="hidden" name="_token" value="{{ csrf_token("session") }}">
+        <input type="hidden" name="markup" value="{{ currentMarkup }}" data-order-form-target="markup">
+        {% if editing %}<input type="hidden" name="version" value="{{ edit.order.edit_version }}">{% endif %}
+        <p class="error" data-json-form-target="error" role="alert" tabindex="-1" hidden></p>
+
+        <section class="legacy-order-create-products">
+            <button type="button" class="addbutton" data-action="order-form#add">Добавить строку</button>
+
+            <div class="legacy-order-create-table-wrap">
+                <table class="grid legacy-order-create-lines">
+                    <thead>
+                        <tr class="gridsheader">
+                            <td>Наименование</td>
+                            <td>Цвет</td>
+                            <td>Количество</td>
+                            <td>Цена</td>
+                            <td data-order-form-target="vatColumn" hidden>Цена с НДС</td>
+                            <td data-order-form-target="fopColumn" hidden>Цена с наценкой ФОП</td>
+                            <td>Скидка</td>
+                            <td>Сумма</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                    </thead>
+                    <tbody data-order-form-target="lines">
+                        {% if editing %}
+                            {% for line in edit.lines %}
+                                {% include 'order/_new_line.html.twig' with {index: loop.index0, productGroups: productGroups, selectedLine: line} %}
+                            {% endfor %}
+                        {% else %}
+                            {% include 'order/_new_line.html.twig' with {index: 0, productGroups: productGroups} %}
+                        {% endif %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="9">
+                                <table class="legacy-order-create-totals">
+                                    <tr>
+                                        <td>Итого:</td>
+                                        <td><b data-order-form-target="total">0.00 грн</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td>БН:</td>
+                                        <td>
+                                            <select data-order-form-target="markupMode" data-action="change->order-form#markupChanged"{% if editing and edit.order.hasPayments %} disabled title="По заказу уже существуют оплаты"{% endif %}>
+                                                <option value="0">0</option>
+                                                <option value="fop"{{ currentMarkup > 0 and currentMarkup < 20 ? ' selected' }}>ФОП</option>
+                                                <option value="vat"{{ currentMarkup == 20 ? ' selected' }}>НДС</option>
+                                            </select>
+                                            <select data-order-form-target="markupFop" data-action="change->order-form#recalculate" hidden{{ editing and edit.order.hasPayments ? ' disabled' }}>
+                                                {% for percent in 1..19 %}
+                                                    <option value="{{ percent }}"{{ percent == (currentMarkup > 0 and currentMarkup < 20 ? currentMarkup : 10) ? ' selected' }}>{{ percent }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <span data-order-form-target="markupSuffix">%</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Итого с бн:</td>
+                                        <td><b data-order-form-target="totalWithMarkup">0.00 грн</b></td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <template data-order-form-target="template">{% include "order/_new_line.html.twig" with { index: "__INDEX__", productGroups: productGroups } %}</template>
+        {% if editing %}
+            <section class="legacy-order-form-section">
+                <h3>Информация о заказчике</h3>
+                <dl class="legacy-order-form-customer-details">
+                    <dt>Заказчик:</dt><dd>{{ edit.order.customer_name }}</dd>
+                    <dt>Телефон:</dt><dd>{% if edit.order.customer_phone %}<a href="tel:{{ edit.order.customer_phone }}">{{ edit.order.customer_phone|phone_format }}</a>{% else %}—{% endif %}</dd>
+                </dl>
+            </section>
+            {% include 'order/_delivery_fields.html.twig' with {values: {
+                desiredAt: edit.order.desired_at|date('Y-m-d'),
+                shippingCost: edit.order.shipping_cost,
+                shippingAddress: edit.order.shipping_address,
+                comments: edit.order.comments
+            }} %}
+        {% endif %}
+        <div class="legacy-order-form-actions">
+            <button type="submit" class="legacy-order-form-submit">{{ editing ? 'Сохранить' : 'Продолжить' }}</button>
+            {% if editing %}<a href="{{ path('order_show', {id: edit.order.id}) }}">Отмена</a>{% endif %}
+        </div>
+    </form>
+</main>
+{% endblock %}

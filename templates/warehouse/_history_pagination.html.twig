@@ -1,0 +1,4 @@
+{% include 'components/_pagination.html.twig' with {
+    current: view.page, pages: view.pages, route: 'warehouse_history', params: {id: view.product.id},
+    label: 'Страницы истории'
+} only %}

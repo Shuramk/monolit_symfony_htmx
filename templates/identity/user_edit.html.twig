@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+{% import 'identity/_permissions.html.twig' as permissionTable %}
+{% block title %}{{ account ? account.displayName : 'Новый пользователь' }}{% endblock %}
+{% block body %}
+<main class="app-main product-settings user-editor"><h3><a href="{{ path('user_settings_list') }}">Пользователи</a> » {{ account ? account.displayName : 'Новый пользователь' }}</h3>
+<form method="post" action="{{ account ? path('user_settings_save',{id:account.id}) : path('user_settings_create') }}" data-controller="json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity">
+<input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+<div class="user-profile-fields">
+    <label for="user-name">Имя пользователя</label><input id="user-name" name="displayName" value="{{ account ? account.displayName : '' }}" maxlength="255" required autocomplete="off">
+    <label for="user-login">Логин</label><input id="user-login" name="login" value="{{ account ? account.userIdentifier : '' }}" maxlength="30" required autocomplete="off">
+    <span>Доступ</span><label class="user-access-enabled"><input type="hidden" name="enabled" value="0"><input type="checkbox" name="enabled" value="1" {{ not account or account.enabled ? 'checked' }}> Разрешён</label>
+</div>
+{% if not account or is_granted('LEGACY_DIVISION',1050) %}<details class="user-password-fields" {{ account ? '' : 'open' }}>
+    <summary>{{ account ? 'Сменить пароль' : 'Пароль' }}</summary>
+    <div class="user-profile-fields">
+        <label for="user-password">Новый пароль</label><input id="user-password" type="password" name="password" minlength="8" maxlength="4096" autocomplete="new-password" {{ account ? '' : 'required' }}>
+        <label for="user-password-confirmation">Повторите пароль</label><input id="user-password-confirmation" type="password" name="passwordConfirmation" minlength="8" maxlength="4096" autocomplete="new-password" {{ account ? '' : 'required' }}>
+    </div>
+</details>{% endif %}
+<section class="user-permissions" data-controller="user-permissions" data-action="change->user-permissions#change invalid->user-permissions#expandAll:capture">
+    <div class="user-permissions-toolbar"><h3>Права пользователя</h3><button type="button" data-action="user-permissions#expandAll">Развернуть все</button><button type="button" data-action="user-permissions#collapseAll">Свернуть все</button></div>
+    <div class="user-permissions-role"><label for="user-role">Роль</label><select id="user-role" name="role"><option value="" {{ not account or account.role is null ? 'selected' }}>Нет группы</option>{% for role in roles %}<option value="{{ role.value }}" {{ account and account.role == role ? 'selected' }}>{{ role.title }}</option>{% endfor %}</select></div>
+    {% set selectedTitle = permissionTable.selectedTitle(permissions,account ? account.startPageId : null)|trim %}
+    <p class="user-start-default" aria-live="polite">Стартовая страница: <span data-start-page-label>{{ selectedTitle ?: 'не выбрана' }}</span></p>
+    <table class="product-table user-permissions-table">
+        <colgroup><col class="user-permission-toggle-column"><col><col class="user-permission-control-column"><col class="user-permission-control-column"></colgroup>
+        <thead><tr><th colspan="2">Функции</th><th>Права<br>пользователя</th><th>Стартовая<br>страница</th></tr></thead>
+        <tbody>{{ permissionTable.rows(permissions,assigned,account ? account.startPageId : null) }}</tbody>
+    </table>
+</section>
+<p class="legacy-form-error" data-json-form-target="error" role="alert" hidden tabindex="-1"></p>
+<p>{% if is_granted('LEGACY_DIVISION',1003) %}<button type="submit" class="legacy-button" {{ selectedTitle ? '' : 'disabled' }}>Сохранить</button>{% endif %} <a href="{{ path('user_settings_list') }}">Отмена</a></p>
+</form></main>
+{% endblock %}

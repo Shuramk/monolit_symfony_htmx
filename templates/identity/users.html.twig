@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+{% block title %}Пользователи{% endblock %}
+{% block body %}
+<main class="app-main product-settings user-settings">
+<h3><a href="{{ path('product_settings') }}">Настройки</a> » Пользователи</h3>
+<div class="user-settings-toolbar">
+{% if is_granted('LEGACY_DIVISION',1002) and is_granted('LEGACY_DIVISION',1003) %}<a class="legacy-button" href="{{ path('user_settings_new') }}">Добавить</a>{% endif %}
+<form method="get" action="{{ path('user_settings_list') }}" class="user-settings-filter" data-controller="auto-submit" data-action="change->auto-submit#submit">
+    <input type="hidden" name="hideInactive" value="0">
+    <label><input type="checkbox" name="hideInactive" value="1" {{ hideInactive ? 'checked' }}> Скрыть неактивных</label>
+    <noscript><button type="submit">Применить</button></noscript>
+</form>
+</div>
+<div class="product-table-wrap">
+<table class="product-table user-settings-table">
+<thead><tr><th>№</th><th>Имя пользователя</th><th>Логин</th><th>Роль</th><th>Редактировать</th><th>Статус</th></tr></thead>
+<tbody>
+{% for account in users %}
+<tr>
+    <td>{{ loop.index }}</td><td>{{ account.display_name }}</td><td>{{ account.login }}</td>
+    <td>{% set label = 'Нет группы' %}{% for role in roles %}{% if role.value == account.role %}{% set label = role.title %}{% endif %}{% endfor %}{{ label }}</td>
+    <td>{% if is_granted('LEGACY_DIVISION',1002) %}<a class="legacy-button" href="{{ path('user_settings_edit',{id:account.id}) }}">Редактировать</a>{% endif %}</td>
+    <td>{{ account.enabled ? 'Активен' : 'Отключён' }}</td>
+</tr>
+{% else %}<tr><td colspan="6">Нет пользователей</td></tr>{% endfor %}
+</tbody></table>
+</div></main>
+{% endblock %}
