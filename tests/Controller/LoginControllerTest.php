@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class LoginControllerTest extends WebTestCase {
     use IdentityTestUser;
 
-    public function testLegacyStartPageRedirectStaysOnTheCurrentHost(): void {
+    public function testLegacyStartPageRedirectsToMigratedShippingOnTheCurrentHost(): void {
         $client = static::createClient();
         $this->authenticate($client);
         $connection = self::getContainer()->get('doctrine.dbal.app_connection');
@@ -26,9 +26,11 @@ final class LoginControllerTest extends WebTestCase {
             $client->request('GET', '/login', [], [], ['HTTP_HOST' => '127.0.0.1:8080']);
             $client->submitForm('Вход', ['login' => 'test-user-990001', 'password' => 'test-password']);
 
-            self::assertResponseRedirects('/admin.php?did=305');
+            self::assertResponseRedirects('/shipping');
             $client->request('GET', '/login');
-            self::assertResponseRedirects('/admin.php?did=305');
+            self::assertResponseRedirects('/shipping');
+            $client->followRedirect();
+            self::assertResponseIsSuccessful();
         } finally {
             $connection = self::getContainer()->get('doctrine.dbal.app_connection');
             $connection->update('identity_users', ['start_page_id' => $previousStartPage], ['id' => 990001]);
