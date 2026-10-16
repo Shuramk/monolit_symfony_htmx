@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ form.task ? 'Изменение задачи №' ~ form.task.id : 'Создание задачи на отгрузку' }}{% endblock %}
+{% block body %}
+<main class="app-main shipping-page shipping-form-page" data-controller="warehouse"
+      data-action="click@window->warehouse#outside keydown.esc@window->warehouse#closeAll resize@window->warehouse#closeAll scroll@window->warehouse#closeAll">
+    <h3><a href="{{ path('order_list') }}">Заказы</a> » <a href="{{ path('order_show', {id: form.order.id}) }}">Заказ №{{ form.order.id }}</a> » {{ form.task ? 'Задача на отгрузку №' ~ form.task.id : 'Создание задачи на отгрузку' }}</h3>
+    <div class="shipping-table-wrap">
+        <table class="shipping-stock-overview">
+            <colgroup><col class="shipping-form-number"><col><col class="shipping-stock-ordered"><col class="shipping-stock-balance"><col class="shipping-stock-location"><col class="shipping-stock-location"></colgroup>
+            <thead><tr><th></th><th>Наименование</th><th>Количество<br>(отгружено)</th><th>Остатки (из них в задачах на отгрузку)</th><th>Офис</th><th>Цех</th></tr></thead>
+            <tbody>{% for line in form.lines %}
+                <tr><td>{{ loop.index }}</td><td>{{ line.name }}</td><td class="centerAlign">{{ line.quantity }} ({{ line.shipped }}) {{ line.unit }}</td>
+                    <td class="shipping-stock-total">{{ line.stockTotal }}
+                        {% if line.reservations %}
+                            <span class="warehouse-stock-wrapper">(<button type="button" class="warehouse-detail-hint" data-warehouse-stock-button
+                                data-action="warehouse#toggle" aria-expanded="false" aria-controls="shipping-reservations-{{ loop.index }}">{{ line.reservedTotal }}</button>)
+                                <span id="shipping-reservations-{{ loop.index }}" class="warehouse-stock-popover warehouse-detail-popover shipping-reservations"
+                                      data-warehouse-target="popover" role="dialog" aria-label="В задачах на отгрузку: {{ line.name }}" hidden>
+                                    <button type="button" class="shipping-reservations-close" data-action="warehouse#closeAll" aria-label="Закрыть">×</button>
+                                    <strong>{{ line.name }}</strong>
+                                    <table><thead><tr><th>№ заказа</th><th>Дата отгрузки</th><th>Кол-во</th></tr></thead><tbody>
+                                        {% for reservation in line.reservations %}<tr>
+                                            <td>{% if reservation.order_id and is_granted('LEGACY_DIVISION', 220) %}<a href="{{ path('order_show', {id: reservation.order_id}) }}" target="_blank" rel="noopener">№{{ reservation.order_id }}</a>{% else %}{{ reservation.order_id ? '№' ~ reservation.order_id : 'Перемещение' }}{% endif %}</td>
+                                            <td>{{ reservation.performance_date ? reservation.performance_date|date('d-m-Y') : '—' }}</td>
+                                            <td>{{ reservation.quantity }}</td>
+                                        </tr>{% endfor %}
+                                    </tbody></table>
+                                </span>
+                            </span>
+                        {% endif %} {{ line.unit }}
+                    </td>
+                    <td class="rightAlign">{{ line.office }}</td><td class="rightAlign">{{ line.workshop }}</td>
+                </tr>
+            {% endfor %}</tbody>
+        </table>
+    </div>
+    <form class="shipping-form" method="post"
+          action="{{ form.task ? path('shipping_update', {id: form.task.id}) : path('shipping_create', {id: form.order.id}) }}"
+          data-controller="shipping-form json-form" data-action="submit->json-form#submit input->json-form#clearValidity">
+        <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+        <input type="hidden" name="version" value="{{ form.version }}">
+        <input type="hidden" name="operationId" value="{{ form.operationId }}">
+        <div class="shipping-table-wrap">
+            <table class="shipping-quantity-table">
+                <colgroup><col class="shipping-form-number"><col><col class="shipping-quantity-value"><col class="shipping-quantity-weight"></colgroup>
+                <thead><tr><th></th><th>Наименование</th><th>Количество</th><th>Вес</th></tr></thead>
+                <tbody>
+                {% for line in form.lines %}
+                    <tr class="{{ loop.index is odd ? 'gridline' : 'gridline1' }}">
+                        <td>{{ loop.index }}</td><td>{{ line.name }}</td>
+                        <td class="rightAlign">{% if line.product_id %}
+                            <input type="hidden" name="lines[{{ loop.index0 }}][productId]" value="{{ line.product_id }}">
+                            <input type="number" name="lines[{{ loop.index0 }}][quantity]" min="0" max="{{ line.remaining }}" step="0.001" value="{{ line.selected }}" required aria-label="К отгрузке: {{ line.name }}"
+                                   data-shipping-form-target="quantity" data-action="input->shipping-form#recalculate"
+                                   data-weight="{{ line.weightPerUnit }}" data-free-office="{{ line.freeOffice }}" data-free-workshop="{{ line.freeWorkshop }}"> {{ line.unit }}
+                        {% else %}Нет связи с товаром{% endif %}</td>
+                        <td class="rightAlign" data-row-weight>{{ line.weight }}т</td>
+                    </tr>
+                {% endfor %}
+                </tbody><tfoot><tr><td colspan="3"></td><td class="rightAlign" data-shipping-form-target="totalWeight">{{ form.totalWeight }}т</td></tr></tfoot>
+            </table>
+        </div>
+        <table class="shipping-storage-block"><tbody><tr><td>Склад:</td><td><select name="storage" data-shipping-form-target="storage" data-action="change->shipping-form#recalculate"><option value="2" {{ form.storage == 2 ? 'selected' }}>Цех</option><option value="1" {{ form.storage == 1 ? 'selected' }}>Офис</option></select></td></tr></tbody></table>
+        <table class="shipping-delivery-block"><tbody>
+            <tr><td>Доставка:</td><td class="shipping-delivery-options">
+                <label class="shipping-pickup"><input type="checkbox" name="pickup" value="1" {{ form.pickup ? 'checked' }} data-shipping-form-target="pickup" data-action="change->shipping-form#togglePickup">Самовывоз</label>
+                <fieldset data-shipping-form-target="delivery" {{ form.pickup ? 'hidden disabled' }}>
+                    <select name="carrierId" aria-label="Перевозчик">{% for carrier in form.carriers %}<option value="{{ carrier.id }}" {{ carrier.id == form.carrierId ? 'selected' }}>{{ carrier.name }}</option>{% endfor %}</select>
+                    <label class="shipping-delivery-price">Стоимость доставки: <input type="number" name="shippingPrice" min="0" max="9999999999.99" step="0.01" value="{{ form.shippingPrice }}" required> грн</label>
+                </fieldset>
+            </td></tr>
+            <tr><td>Дата<br>выполнения:</td><td><input type="date" name="date" value="{{ form.date }}" required> <input type="time" name="time" value="{{ form.time }}" required aria-label="Время отгрузки">{% if not form.task and app.user.canApproveShipping and is_granted('LEGACY_DIVISION', 1700) %} <label>Согласовано:<input type="checkbox" name="allowed" value="1"></label>{% endif %}</td></tr>
+            <tr><td class="shipping-comment-label">Комментарий:</td><td><textarea name="comment" maxlength="20000" rows="7">{{ form.comment }}</textarea></td></tr>
+            <tr><td colspan="2" class="shipping-submit"><button type="submit">{{ form.task ? 'Сохранить' : 'Добавить' }}</button></td></tr>
+        </tbody></table>
+        <p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+    </form>
+</main>
+{% endblock %}

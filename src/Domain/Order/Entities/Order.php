@@ -56,6 +56,15 @@ class Order {
     #[ORM\Column(name: 'shipping_cost', type: 'decimal', precision: 12, scale: 2)]
     private string $shippingCost;
 
+    #[ORM\Column(name: 'carrier_id', type: 'bigint', nullable: true)]
+    private ?int $carrierId = null;
+
+    #[ORM\Column(name: 'shipping_trips', nullable: true)]
+    private ?int $shippingTrips = null;
+
+    #[ORM\Column(name: 'shipping_unit_price', type: 'decimal', precision: 12, scale: 2, nullable: true)]
+    private ?string $shippingUnitPrice = null;
+
     #[ORM\Column(type: 'smallint')]
     private int $markup;
 
@@ -124,6 +133,9 @@ class Order {
             now: $now,
         );
         $order->managerId = $managerId;
+        $order->carrierId = $data->carrierId;
+        $order->shippingTrips = $data->shippingTrips;
+        $order->shippingUnitPrice = $data->shippingUnitPrice;
 
         return $order;
     }
@@ -144,6 +156,20 @@ class Order {
     public function getStatus(): OrderStatus {
 
         return $this->status;
+    }
+
+    public function assertVersion(int $version): void {
+        if ($this->version !== $version) {
+            throw new OrderVersionConflict('Заказ уже изменён. Обновите страницу.');
+        }
+    }
+
+    public function shippingChanged(\DateTimeImmutable $now, ?OrderStatus $status = null): void {
+        if ($status !== null) {
+            $this->status = $status;
+        }
+        $this->updatedAt = $now;
+        ++$this->version;
     }
 
     public function changeStatus(

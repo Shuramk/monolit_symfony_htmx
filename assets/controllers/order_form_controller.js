@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-    static targets = ["lines", "template", "total", "totalWithMarkup", "markup", "markupMode", "markupFop", "markupSuffix", "vatColumn", "fopColumn", "budget", "vatAmount", "balance"];
+    static targets = ["lines", "template", "total", "totalWithMarkup", "markup", "markupMode", "markupFop", "markupSuffix", "vatColumn", "fopColumn", "budget", "vatAmount", "balance", "totalWeight", "totalsCell"];
     static values = { products: Object, allowEmpty: Boolean };
 
     connect() {
@@ -27,6 +27,7 @@ export default class extends Controller {
             const option = new Option(product.name, product.id);
             option.dataset.price = product.price;
             option.dataset.unit = product.unit ?? '';
+            option.dataset.weight = product.weight_per_unit ?? '0';
             productSelect.add(option);
         });
         productSelect.disabled = products.length === 0;
@@ -55,10 +56,16 @@ export default class extends Controller {
         this.recalculate();
     }
 
+    globalDiscountChanged(event) {
+        this.linesTarget.querySelectorAll('[name*="[discount]"]').forEach(input => { input.value = event.currentTarget.value; });
+        this.recalculate();
+    }
+
     recalculate() {
         const markup = this.effectiveMarkup();
         const mode = this.markupModeTarget.value;
         let total = 0;
+        let totalWeight = 0;
 
         this.linesTarget.querySelectorAll("[data-order-line]").forEach((line) => {
             const quantity = Number(line.querySelector(`[name*="[quantity]"]`).value || 0);
@@ -69,6 +76,7 @@ export default class extends Controller {
             const lineTotal = mode === "fop" ? amount * (1 + markup / 100) : amount;
             const unit = line.querySelector('[data-order-line-unit]');
             if (unit) unit.textContent = line.querySelector('[name*="[productId]"]').selectedOptions[0]?.dataset.unit ?? '';
+            totalWeight += quantity * Number(line.querySelector('[name*="[productId]"]').selectedOptions[0]?.dataset.weight ?? 0) / 1000;
 
             line.querySelector("[data-order-line-total]").textContent = `${lineTotal.toFixed(2)} грн`;
             line.querySelector("[data-order-line-vat-price]").value = (priceAfterDiscount * 1.2).toFixed(4);
@@ -80,6 +88,7 @@ export default class extends Controller {
         this.markupTarget.value = String(markup);
         this.totalTarget.textContent = `${total.toFixed(2)} грн`;
         this.totalWithMarkupTarget.textContent = `${totalWithMarkup.toFixed(2)} грн`;
+        if (this.hasTotalWeightTarget) this.totalWeightTarget.textContent = totalWeight.toFixed(3);
         if (this.hasVatAmountTarget) this.vatAmountTarget.textContent = `${(mode === 'vat' ? total * 0.2 : 0).toFixed(2)} грн`;
         if (this.hasBalanceTarget) this.balanceTarget.textContent = `${totalWithMarkup.toFixed(2)} грн`;
         if (this.hasBudgetTarget) {
@@ -120,6 +129,7 @@ export default class extends Controller {
         const mode = this.markupModeTarget.value;
         const isFop = mode === "fop";
         const isVat = mode === "vat";
+        if (this.hasTotalsCellTarget) this.totalsCellTarget.colSpan = 6 + (isFop || isVat ? 1 : 0);
 
         this.markupFopTarget.hidden = !isFop;
         this.markupSuffixTarget.hidden = !isFop && !isVat;

@@ -1,0 +1,23 @@
+<section class="order-wizard-summary">
+    <div class="legacy-order-create-table-wrap">
+        <table class="grid order-wizard-readonly">
+            <colgroup><col><col><col><col><col><col><col></colgroup>
+            <thead><tr class="gridsheader"><td>Наименование</td><td>Цвет</td><td>Количество</td><td>Цена</td><td>Скидка</td><td>Сумма</td><td></td></tr></thead>
+            <tbody>{% for line in summary.lines %}<tr>
+                <td><select disabled aria-label="Наименование"><option>{{ line.groupName }}</option></select></td>
+                <td><select disabled aria-label="Цвет"><option>{{ line.variantName }}</option></select></td>
+                <td><input disabled value="{{ line.quantity }}" aria-label="Количество"> {{ line.unit }}</td>
+                <td><input disabled value="{{ line.unitPrice|number_format(2, '.', '') }}" aria-label="Цена"> грн.</td>
+                <td><input disabled value="{{ line.discount }}" aria-label="Скидка"> %</td>
+                <td class="rightAlign">{{ line.total }} грн</td>
+                <td></td>
+            </tr>{% endfor %}</tbody>
+            <tfoot><tr><td colspan="6"><table class="legacy-order-create-totals">
+                <tr><td>Итого:</td><td>{{ summary.goodsTotal }} грн</td></tr>
+                <tr><td>БН:</td><td><select disabled aria-label="БН"><option>{{ summary.markup == 20 ? 'НДС' : summary.markup }}</option></select> %</td></tr>
+                <tr><td>Итого с бн:</td><td>{{ summary.total }} грн</td></tr>
+            </table></td><td></td></tr></tfoot>
+        </table>
+    </div>
+    <p class="order-wizard-weight">Общий вес: {{ summary.totalWeight }} т</p>
+</section>

@@ -53,7 +53,9 @@ final readonly class IdentityMenuRepository {
 
     public function startPageUrl(int $userId, int $divisionId, string $legacyAdminUrl): ?string {
         if (!$this->userHasDivision($userId,$divisionId) || !$this->connection->fetchOne('SELECT 1 FROM identity_legacy_divisions WHERE id=? AND enabled=1',[$divisionId])) return null;
-        $required = match ($divisionId) { 100=>101, 200=>220, 1000=>1010, default=>$divisionId };
+        $required = match ($divisionId) {
+            100 => 101, 200 => 220, 300 => 305, 1000 => 1010, default => $divisionId,
+        };
         return $this->userHasDivision($userId,$required) ? $this->url($divisionId,$legacyAdminUrl) : $legacyAdminUrl.'?did='.$divisionId;
     }
 
@@ -81,6 +83,8 @@ final readonly class IdentityMenuRepository {
 
     private function url(int $divisionId, string $legacyAdminUrl): string {
         $crm = match ($divisionId) {
+            300, 305 => '/shipping',
+            311 => '/shipping/archive',
             1699,1700=>'/crm/deals',1701=>'/crm/deals/new',
             1750=>'/crm/tasks',1751=>'/crm/tasks/new',1754=>'/crm/tasks/archive',
             1755=>'/crm/director/tasks',1756=>'/crm/director/tasks/new',1759=>'/crm/director/tasks/archive',

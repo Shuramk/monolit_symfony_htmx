@@ -7,6 +7,9 @@ use App\Domain\Crm\ReadModel\CrmBoardView;
 use App\Domain\Crm\Repository\CrmRepository;
 use App\Domain\Crm\UseCases\DealActions;
 use App\Domain\Crm\UseCases\ApproveShipment;
+use App\Domain\Warehouse\UseCases\Dtos\ShippingApprovalDto;
+use App\Domain\Warehouse\ReadModel\Dtos\ShippingFilterDto;
+use App\Domain\Warehouse\ReadModel\ShippingView;
 use App\Domain\Crm\UseCases\SaveDeal;
 use App\Domain\Crm\UseCases\Dtos\SaveDealDto;
 use App\Domain\Identity\Entities\User;
@@ -126,19 +129,27 @@ final class DealController extends AbstractController {
         ]);
     }
 
-    #[Route('/shipments/{id}/approval', name: 'crm_shipment_approval', requirements: ['id'=>'\d+'], methods: ['POST'])]
-    public function approval(int $id, Request $request, ApproveShipment $approve, User $user): Response {
-        $data = $request->getPayload();
-        if (!$data->has('allowed')
-            || !$data->has('expectedAllowed')
-            || !in_array((string)$data->get('allowed'), ['0', '1'], true)
-            || !in_array((string)$data->get('expectedAllowed'), ['0', '1'], true)
-        ) {
-            throw new \DomainException('Укажите состояние согласования.');
+    #[Route('/shipments/{id}/approval', name: 'crm_shipment_approval', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function approval(
+        int $id,
+        ShippingApprovalDto $dto,
+        ShippingFilterDto $filter,
+        ApproveShipment $approve,
+        User $user,
+        ShippingView $view,
+    ): Response {
+        if (!$user->canApproveShipping()) {
+            throw $this->createAccessDeniedException('Согласование отгрузки доступно продажам и главной группе.');
         }
-        $approve->execute($id, $data->getInt('allowed') === 1, $data->getInt('expectedAllowed') === 1, $user->getId(), $this->now());
+        $approve->execute($id, $dto->allowed === 1, $dto->expectedAllowed === 1, $user->getId(), $this->now());
 
-        return $this->json(['location' => $this->generateUrl('crm_deals')]);
+        return $this->json([
+            'location' => $this->generateUrl(
+                $dto->returnToShipping ? 'shipping_list' : 'crm_deals',
+                $dto->returnToShipping ? $filter->parameters() : [],
+            ),
+            'task' => $dto->returnToShipping ? $view->state($id) : null,
+        ]);
     }
 
     private function now(): \DateTimeImmutable {

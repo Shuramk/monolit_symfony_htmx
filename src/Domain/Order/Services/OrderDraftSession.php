@@ -30,4 +30,13 @@ final readonly class OrderDraftSession {
     public function clear(): void {
         $this->requestStack->getSession()->remove(self::KEY);
     }
+
+    public function selectCustomer(int $id): void {
+        if (!$this->hasLines()) {
+            throw new \DomainException('Состав заказа отсутствует. Вернитесь к выбору продукции.');
+        }
+        $draft = $this->load();
+        $draft['customerId'] = $id;
+        $this->requestStack->getSession()->set(self::KEY, $draft);
+    }
 }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Накладная №{{ document.number }}{{ document.kind == 'security' ? ' — охрана' }}</title>
+    {{ importmap('app') }}
+    <link rel="stylesheet" href="{{ asset('styles/shipping_print.css') }}">
+</head>
+<body class="shipping-print" data-controller="order-print">
+    <div class="shipping-print-toolbar"><button type="button" data-action="order-print#print">Печатать</button></div>
+    <article>
+        <h2>НАКЛАДНАЯ №{{ document.number }}{{ document.kind == 'security' ? ' — ОХРАНА' }}</h2>
+        <p>{{ document.date|date('d-m-Y') }}. Задача на отгрузку №{{ document.task.id }}</p>
+        <p>Заказчик: {{ document.order.customer_name }}{% if document.order.customer_phone %}, тел. {{ document.order.customer_phone }}{% endif %}<br>{{ document.order.shipping_address }}</p>
+        <table class="shipping-print-items">
+            <thead><tr><th>№</th><th>Наименование</th><th>Ед. изм.</th><th>Количество</th>
+                {% if document.kind == 'priced' %}<th class="shipping-print-price">Цена, грн</th><th class="shipping-print-price">Сумма, грн</th>{% endif %}
+                {% if document.kind == 'security' %}<th>Тип поддона</th><th>Поддонов</th><th>Рядов</th>{% endif %}
+            </tr></thead>
+            <tbody>{% for line in document.lines %}<tr><td>{{ loop.index }}</td><td>{{ line.name }}</td><td>{{ line.unit }}</td><td>{{ line.quantity }}</td>
+                {% if document.kind == 'priced' %}<td class="shipping-print-price">{{ line.price }}</td><td class="shipping-print-price">{{ line.total }}</td>{% endif %}
+                {% if document.kind == 'security' %}
+                    <td>{% for pallet in line.pallets %}{{ pallet.name }}<br>{% endfor %}</td>
+                    <td>{% for pallet in line.pallets %}{{ pallet.count }}<br>{% endfor %}</td>
+                    <td class="shipping-print-pallets">{% for pallet in line.pallets %}{{ pallet.rows ?? '—' }}<br>{% endfor %}</td>
+                {% endif %}
+            </tr>{% endfor %}</tbody>
+            {% if document.kind == 'priced' %}<tfoot><tr><th colspan="5">Итого{{ document.vat is not null ? ' без НДС' }}:</th><td>{{ document.subtotal }}</td></tr>
+                {% if document.vat is not null %}<tr><th colspan="5">НДС 20%:</th><td>{{ document.vat }}</td></tr><tr><th colspan="5">Итого с НДС:</th><td>{{ document.total }}</td></tr>{% endif %}
+            </tfoot>{% endif %}
+        </table>
+        <p>Комментарий: {{ document.task.comment|striptags|nl2br }}</p>
+        <footer>Отпустил ____________________ Получил ____________________{% if document.kind == 'security' %}<p>Проверил ____________________ Время выезда ____________________</p>{% endif %}</footer>
+    </article>
+</body>
+</html>

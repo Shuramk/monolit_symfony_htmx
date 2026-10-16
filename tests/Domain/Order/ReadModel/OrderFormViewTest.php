@@ -6,6 +6,7 @@ namespace App\Tests\Domain\Order\ReadModel;
 
 use App\Domain\Customer\Repository\CustomerViewRepository;
 use App\Domain\Order\ReadModel\OrderFormView;
+use App\Domain\Order\ReadModel\LegacyProductText;
 use App\Domain\Order\Repository\OrderViewRepository;
 use App\Domain\Product\Repository\ProductCatalogRepository;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -21,7 +22,17 @@ final class OrderFormViewTest extends KernelTestCase {
         $form = $view->get();
         self::assertNotEmpty($form->productGroups);
         self::assertSame($products->findProductGroups(), $form->productGroups);
-        self::assertSame($products->findProductsByParent(), $form->productsByParent);
+        $expected = $products->findProductsByParent();
+        $text = new LegacyProductText();
+        foreach ($expected as &$variants) {
+            foreach ($variants as &$variant) {
+                $variant['name'] = $text->format($variant['name']);
+                $variant['unit'] = $text->format($variant['unit'] ?? '');
+            }
+            unset($variant);
+        }
+        unset($variants);
+        self::assertSame($expected, $form->productsByParent);
         self::assertSame($customers->findCustomers(), $view->getCustomers());
 
         foreach ($form->productGroups as $group) {

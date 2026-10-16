@@ -4,6 +4,13 @@ namespace App\Application\Controller\Order;
 
 use App\Application\Controller\Order\Dtos\OrderCustomerDto;
 use App\Application\Controller\Order\Dtos\OrderDraftDto;
+use App\Application\Controller\Order\Dtos\OrderSelectCustomerDto;
+use App\Domain\Customer\ReadModel\CustomerChoices;
+use App\Domain\Customer\ReadModel\Dtos\CustomerSearchDto;
+use App\Domain\Customer\UseCases\CreateCustomer;
+use App\Domain\Customer\UseCases\Dtos\CreateCustomerDto;
+use App\Domain\Order\ReadModel\OrderWizardView;
+use App\Domain\Order\UseCases\SelectOrderCustomer;
 use App\Domain\Identity\Security\DivisionAccessVoter;
 use App\Domain\Identity\Entities\User;
 use App\Domain\Identity\Enums\UserRole;
@@ -112,12 +119,13 @@ final class OrderController extends AbstractController {
     }
 
     #[Route("/orders/new", name: "order_new", methods: ["GET"])]
-    public function new(OrderFormView $orderFormView): Response {
+    public function new(OrderFormView $orderFormView, OrderWizardView $wizard): Response {
         $form = $orderFormView->get();
 
         return $this->render("order/new.html.twig", [
             "productGroups" => $form->productGroups,
             "productsByParent" => $form->productsByParent,
+            'draft' => $wizard->get(),
         ]);
     }
 
@@ -150,14 +158,60 @@ final class OrderController extends AbstractController {
     }
 
     #[Route("/orders/new/customer", name: "order_new_customer", methods: ["GET"])]
-    public function customer(OrderFormView $orderFormView, OrderDraftSession $draftSession): Response {
-        if (!$draftSession->hasLines()) {
+    public function customer(OrderWizardView $wizard): Response {
+        $summary = $wizard->get();
+        if ($summary === null) {
             return $this->redirectToRoute("order_new");
         }
 
         return $this->render("order/customer.html.twig", [
-            "customers" => $orderFormView->getCustomers(),
-            "desiredAt" => (new \DateTimeImmutable("+2 weeks"))->format("Y-m-d"),
+            'summary' => $summary,
+            'operationId' => $summary->operationId,
+        ]);
+    }
+
+    #[Route('/orders/new/customers/search', name: 'order_customer_search', methods: ['GET'])]
+    public function searchCustomers(CustomerSearchDto $filter, CustomerChoices $customers): Response {
+
+        return $this->json(['customers' => $customers->search($filter)]);
+    }
+
+    #[Route('/orders/new/customers', name: 'order_customer_create', methods: ['POST'])]
+    public function createCustomer(
+        CreateCustomerDto $dto,
+        CreateCustomer $create,
+        CustomerChoices $customers,
+        User $user,
+    ): Response {
+        $id = $create->execute($dto, $user->getId(), new \DateTimeImmutable());
+
+        return $this->json([
+            'customer' => $customers->find($id), 'location' => $this->generateUrl('order_new_customer'),
+        ], Response::HTTP_CREATED);
+    }
+
+    #[Route('/orders/draft/customer', name: 'order_draft_customer', methods: ['POST'])]
+    public function selectCustomer(OrderSelectCustomerDto $dto, SelectOrderCustomer $select): Response {
+        $select->execute($dto);
+
+        return $this->json(['location' => $this->generateUrl('order_new_delivery')]);
+    }
+
+    #[Route('/orders/new/delivery', name: 'order_new_delivery', methods: ['GET'])]
+    public function delivery(OrderWizardView $wizard): Response {
+        $summary = $wizard->get();
+        if ($summary === null) {
+
+            return $this->redirectToRoute('order_new');
+        }
+        if ($summary->customer === null) {
+
+            return $this->redirectToRoute('order_new_customer');
+        }
+
+        return $this->render('order/delivery.html.twig', [
+            'summary' => $summary,
+            'desiredAt' => (new \DateTimeImmutable('today', new \DateTimeZone('Europe/Kyiv')))->format('Y-m-d'),
         ]);
     }
 }

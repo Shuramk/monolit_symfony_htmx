@@ -17,6 +17,9 @@ final class CreateOrderDto {
         public readonly string $shippingCost,
         public readonly int $markup,
         public readonly array $lines,
+        public readonly ?int $carrierId = null,
+        public readonly ?int $shippingTrips = null,
+        public readonly ?string $shippingUnitPrice = null,
     ) {
     }
 }

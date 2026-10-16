@@ -3,15 +3,15 @@
 {% block title %}{{ edit is defined ? 'Редактирование заказа №' ~ edit.order.id : 'Создание нового заказа' }}{% endblock %}
 
 {% block body %}
-<main class="app-main legacy-order-form-page">
+<main class="app-main legacy-order-form-page{{ edit is defined ? '' : ' order-wizard' }}">
     {% set editing = edit is defined %}
-    {% set currentMarkup = editing ? edit.order.markup : 0 %}
+    {% set currentMarkup = editing ? edit.order.markup : (draft.markup|default(0)) %}
     <h3 class="legacy-order-breadcrumb"><a href="{{ path('order_list') }}">Заказы</a> »
         {% if editing %}<a href="{{ path('order_show', {id: edit.order.id}) }}">Заказ №{{ edit.order.id }}</a> » Редактирование
         {% else %}<a href="{{ path('order_list') }}">Список заказов</a> » Создание нового заказа{% endif %}
     </h3>
 
-    <form method="post" action="{{ editing ? path('order_update', {id: edit.order.id}) : path('order_draft') }}" class="legacy-order-form" data-controller="order-form json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity" data-order-form-products-value="{{ productsByParent|json_encode }}">
+    <form method="post" action="{{ editing ? path('order_update', {id: edit.order.id}) : path('order_draft') }}" class="legacy-order-form{{ editing ? '' : ' order-wizard-products' }}" data-controller="order-form json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity" data-order-form-products-value="{{ productsByParent|json_encode }}">
         <input type="hidden" name="_token" value="{{ csrf_token("session") }}">
         <input type="hidden" name="markup" value="{{ currentMarkup }}" data-order-form-target="markup">
         {% if editing %}<input type="hidden" name="version" value="{{ edit.order.edit_version }}">{% endif %}
@@ -40,13 +40,19 @@
                             {% for line in edit.lines %}
                                 {% include 'order/_new_line.html.twig' with {index: loop.index0, productGroups: productGroups, selectedLine: line} %}
                             {% endfor %}
+                        {% elseif draft is defined and draft %}
+                            {% for line in draft.lines %}
+                                {% set selectedLine = {productId: line.productId, groupId: line.groupId, quantity: line.quantity, unitPrice: line.unitPrice, discount: line.discount, options: productsByParent[line.groupId]} %}
+                                {% include 'order/_new_line.html.twig' with {index: loop.index0, selectedLine: selectedLine} %}
+                            {% endfor %}
                         {% else %}
                             {% include 'order/_new_line.html.twig' with {index: 0, productGroups: productGroups} %}
                         {% endif %}
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="9">
+                            <td colspan="{{ editing ? 9 : (currentMarkup > 0 ? 7 : 6) }}"{% if not editing %} data-order-form-target="totalsCell"{% endif %}>
+                                {% if not editing %}<label class="order-global-discount">Скидка: <select data-action="change->order-form#globalDiscountChanged">{% for percent in 0..100 %}<option value="{{ percent }}">{{ percent }}</option>{% endfor %}</select> %</label>{% endif %}
                                 <table class="legacy-order-create-totals">
                                     <tr>
                                         <td>Итого:</td>
@@ -74,11 +80,15 @@
                                     </tr>
                                 </table>
                             </td>
+                            {% if not editing %}<td></td>{% endif %}
                         </tr>
                     </tfoot>
                 </table>
             </div>
         </section>
+        {% if not editing %}
+            <p class="order-wizard-weight">Общий вес: <output data-order-form-target="totalWeight">0.000</output> т</p>
+        {% endif %}
 
         <template data-order-form-target="template">{% include "order/_new_line.html.twig" with { index: "__INDEX__", productGroups: productGroups } %}</template>
         {% if editing %}
@@ -97,7 +107,7 @@
             }} %}
         {% endif %}
         <div class="legacy-order-form-actions">
-            <button type="submit" class="legacy-order-form-submit">{{ editing ? 'Сохранить' : 'Продолжить' }}</button>
+            <button type="submit"{% if editing %} class="legacy-order-form-submit"{% endif %}>{{ editing ? 'Сохранить' : 'Продолжить' }}</button>
             {% if editing %}<a href="{{ path('order_show', {id: edit.order.id}) }}">Отмена</a>{% endif %}
         </div>
     </form>

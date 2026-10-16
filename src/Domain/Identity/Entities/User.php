@@ -87,6 +87,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface {
     }
 
     public function canManageWarehouse(): bool { return $this->canAccess() && $this->getRole() === UserRole::Main; }
+    public function canExecuteShipping(): bool {
+
+        return $this->canAccess()
+            && (in_array($this->getRole(), [UserRole::Main, UserRole::Production], true) || $this->id === 31);
+    }
+    public function canApproveShipping(): bool {
+
+        return $this->canAccess() && in_array($this->getRole(), [UserRole::Main, UserRole::Sales], true);
+    }
     public function canSeeWarehouseBreakdown(): bool { return $this->canAccess() && in_array($this->getRole(), [UserRole::Main, UserRole::Sales], true); }
 
     public function getRole(): ?UserRole { return $this->role; }

@@ -1,0 +1,7 @@
+<form action="{{ path('shipping_action', filterParams|default({})|merge({id: task.id, action: action})) }}" method="post"
+      data-controller="json-form" data-action="submit->json-form#submit">
+    <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+    <input type="hidden" name="version" value="{{ task.version }}">
+    <button type="submit" class="shipping-button">{{ label }}</button>
+    <p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+</form>

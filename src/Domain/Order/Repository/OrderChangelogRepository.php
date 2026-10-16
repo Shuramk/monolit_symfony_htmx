@@ -10,7 +10,7 @@ final readonly class OrderChangelogRepository {
     /** @return array<string, mixed> */
     public function snapshot(int $orderId): array {
         $order = $this->connection->fetchAssociative(
-            'SELECT id, customer_id, customer_name, customer_phone, shipping_address, shipping_cost, desired_at, comments, markup, status FROM orders WHERE id = :id',
+            'SELECT id, customer_id, customer_name, customer_phone, shipping_address, shipping_cost, carrier_id, shipping_trips, shipping_unit_price, desired_at, comments, markup, status FROM orders WHERE id = :id',
             ['id' => $orderId],
         );
         if ($order === false) {
