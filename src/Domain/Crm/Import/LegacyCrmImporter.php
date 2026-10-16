@@ -10,12 +10,17 @@ final readonly class LegacyCrmImporter {
         #[Autowire('@doctrine.dbal.legacy_connection')] private Connection $legacy,
         #[Autowire('@doctrine.dbal.app_connection')] private Connection $app,
         #[Autowire('%kernel.project_dir%')] private string $projectDir,
+        #[Autowire('%env(default::LEGACY_CRM_FILES_DIR)%')] private ?string $legacyFilesDir = null,
     ) {}
 
     public function import(): array {
         return $this->app->transactional(function (): array {
             // The marker's unique key serializes concurrent imports; rollback releases it.
             if ($this->app->fetchOne("SELECT 1 FROM crm_imports WHERE name='legacy'") !== false) return ['alreadyImported'=>true];
+            $filesDir = $this->legacyFilesDir ?: dirname($this->projectDir).'/monolit_old/taskfiles';
+            if ($this->legacyFilesDir && (!is_dir($filesDir) || !is_readable($filesDir))) {
+                throw new \DomainException('Каталог LEGACY_CRM_FILES_DIR не существует или недоступен для чтения.');
+            }
             $this->app->insert('crm_imports',['name'=>'legacy','imported_at'=>date('Y-m-d H:i:s')]);
             if ($this->app->fetchOne('SELECT 1 FROM crm_deals LIMIT 1') !== false || $this->app->fetchOne('SELECT 1 FROM crm_tasks LIMIT 1') !== false) throw new \DomainException('CRM уже содержит новые записи. Импорт не заменяет их.');
             $deals = $this->legacy->fetchAllAssociative('SELECT * FROM sklad_requests ORDER BY requestID');
@@ -55,7 +60,7 @@ final readonly class LegacyCrmImporter {
                 }
                 foreach (json_decode($r['files'] ?? '[]',true) ?: [] as $file) {
                     if (!is_string($file) || basename($file) !== $file) continue;
-                    $source = dirname($this->projectDir).'/monolit_old/taskfiles/'.$r['id'].'/'.$file;
+                    $source = rtrim($filesDir,'/').'/'.$r['id'].'/'.$file;
                     $storage = 'legacy-'.$r['id'].'-'.hash('sha256',$file); $available = is_file($source);
                     if ($available) {
                         $directory = $this->projectDir.'/var/crm-files';

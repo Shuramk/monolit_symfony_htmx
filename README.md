@@ -25,6 +25,9 @@ symfony php -S 127.0.0.1:8080 -t public
 
 Открыть `http://127.0.0.1:8080/`.
 
+Первое развёртывание на HOSTiQ, порядок импортов и журнал текущего переноса:
+[docs/deploy/hostiq.md](docs/deploy/hostiq.md).
+
 Без Symfony CLI указывайте PHP 8.3 явно: `php8.3 composer.phar install`,
 `php8.3 bin/console …`, `php8.3 bin/phpunit`. Путь к Composer/CLI PHP на хостинге
 может отличаться. Правило PHP в `.htaccess` не переключает консольный PHP.
