@@ -34,7 +34,7 @@ final class OrderDetailsViewTest extends KernelTestCase {
             ] as $markup => $expected) {
                 $connection->update('orders', ['markup' => $markup], ['id' => 99003002]);
                 $order = self::getContainer()->get(OrderDetailsView::class)->find(99003002);
-                $html = self::getContainer()->get('twig')->render('order/show.html.twig', ['order' => $order]);
+                $html = self::getContainer()->get('twig')->render('order/show.html.twig', ['order' => $order, 'returns' => []]);
                 $crawler = new Crawler($html);
                 if ($markup === 20) {
                     self::assertStringContainsString('с НДС', $crawler->filter('.legacy-order-lines thead')->text());
@@ -95,7 +95,7 @@ final class OrderDetailsViewTest extends KernelTestCase {
             self::assertSame('14.00', $order->lines[0]['reserved']);
             self::assertCount(2, $order->lines[0]['stockOrders']);
             self::assertSame(['10.00','4.00'], array_column($order->lines[0]['stockOrders'], 'quantity'));
-            $html = new Crawler(self::getContainer()->get('twig')->render('order/show.html.twig', ['order'=>$order]));
+            $html = new Crawler(self::getContainer()->get('twig')->render('order/show.html.twig', ['order'=>$order, 'returns'=>[]]));
             self::assertStringContainsString('Вес', $html->filter('.legacy-order-lines thead')->text());
             self::assertStringContainsString('Склад*', $html->filter('.legacy-order-lines thead')->text());
             self::assertSame('13.502т', $html->filter('.legacy-order-weight-total')->text());

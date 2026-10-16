@@ -83,6 +83,7 @@ final readonly class IdentityMenuRepository {
 
     private function url(int $divisionId, string $legacyAdminUrl): string {
         $crm = match ($divisionId) {
+            102,114 => '/warehouse/returns',
             300, 305 => '/shipping',
             311 => '/shipping/archive',
             1699,1700=>'/crm/deals',1701=>'/crm/deals/new',

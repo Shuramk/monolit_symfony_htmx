@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+{% block title %}Возвраты{% endblock %}
+{% block body %}
+<main class="app-main">
+    <h3>Склад » Возвраты{{ page.archive ? ' » Архив заявок' }}</h3>
+    <p><a href="{{ path('order_returns') }}">Активные</a>{% if is_granted('LEGACY_DIVISION', 114) %} | <a href="{{ path('order_returns_archive') }}">Архив заявок</a>{% endif %}</p>
+    {% if canAccept and not page.archive %}
+        <form method="get" action="{{ path('order_return_select_order') }}"><label>Номер заказа <input type="number" min="1" name="orderId" required></label> <button>Принять возврат по заказу</button></form>
+    {% endif %}
+    {% if canCreate and not page.archive %}
+    <details><summary>Новая заявка на возврат</summary>
+        <form method="post" action="{{ path('order_return_draft_create') }}" data-controller="json-form return-draft" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity">
+            <input type="hidden" name="_token" value="{{ csrf_token('session') }}"><input type="hidden" name="operationId" value="{{ operationId }}">
+            <table class="grid"><thead><tr><th>Продукция</th><th>Количество</th><th></th></tr></thead><tbody data-return-draft-target="rows"></tbody></table>
+            <template data-return-draft-target="template"><tr><td><select name="items[INDEX][productId]" required>{% for product in page.products %}<option value="{{ product.id }}">{{ product.name }} ({{ product.unit }})</option>{% endfor %}</select></td><td><input type="number" name="items[INDEX][quantity]" min="0.001" max="999999999.999" step="0.001" required></td><td><button type="button" data-action="return-draft#remove">Удалить</button></td></tr></template>
+            <button type="button" data-action="return-draft#add">Добавить продукцию</button>
+            <p><label>Комментарий <textarea name="comment" maxlength="20000"></textarea></label></p>
+            <button type="submit">Создать заявку</button><p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+        </form>
+    </details>
+    {% endif %}
+    {% if page.drafts %}<h3>Заявки</h3><table class="grid"><thead><tr><th>№ / Дата</th><th>Автор</th><th>Продукция / Комментарий</th><th></th></tr></thead><tbody>
+    {% for draft in page.drafts %}<tr><td>{{ draft.id }}<br>{{ draft.created_at|date('d-m-Y H:i') }}</td><td>{{ draft.author }}</td><td>{{ draft.comment }}<br>{% if draft.importWarning %}<strong>В исходной заявке есть некорректные позиции. Проверьте состав при приёмке.</strong><br>{% endif %}{% for item in draft.items %}{{ item.name }} — {{ item.quantity }}<br>{% endfor %}</td><td>{% if canAccept and not page.archive %}<form method="get" action="{{ path('order_return_select_order') }}"><input type="hidden" name="draftId" value="{{ draft.id }}"><label>Заказ <input type="number" min="1" name="orderId" required></label><button>Приёмка</button></form>{% endif %}</td></tr>{% endfor %}
+    </tbody></table>{% endif %}
+    {% include 'order_returns/_history.html.twig' with {returns: page.returns} only %}
+    <nav aria-label="Страницы возвратов">{% for number in 1..page.pages %}{% if number == page.page %}<strong>{{ number }}</strong>{% else %}<a href="{{ path(page.archive ? 'order_returns_archive' : 'order_returns', {page: number}) }}">{{ number }}</a>{% endif %} {% endfor %}</nav>
+</main>
+{% endblock %}

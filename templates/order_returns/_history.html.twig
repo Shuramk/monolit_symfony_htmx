@@ -1,0 +1,12 @@
+{% if returns %}
+<section class="order-returns">
+    <h3>Возвраты</h3>
+    <table class="grid"><thead><tr><th>№ / Заказ</th><th>Принято</th><th>Продукция</th><th>Проведение</th></tr></thead><tbody>
+    {% for row in returns %}
+        <tr><td>{{ row.id }} / {{ row.order_id }}</td><td>{{ row.accepted_at|date('d-m-Y H:i') }}<br>{{ row.author }}</td>
+            <td>{% for item in row.items %}{{ item.name }} — {{ item.quantity }} × {{ item.price }} грн<br>{% endfor %}</td>
+            <td>{% if row.processed_by is null %}Не проведён{% else %}Проведён{% if row.processed_at %} {{ row.processed_at|date('d-m-Y H:i') }}{% endif %}<br>{{ row.processor }}<br>Выплата: {{ row.refund_amount }} грн{% endif %}</td></tr>
+    {% endfor %}
+    </tbody></table>
+</section>
+{% endif %}

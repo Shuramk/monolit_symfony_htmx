@@ -20,6 +20,7 @@ use App\Domain\Order\ReadModel\OrderEditView;
 use App\Domain\Order\ReadModel\OrderFormView;
 use App\Domain\Order\ReadModel\OrderListView;
 use App\Domain\Order\ReadModel\OrderPrintView;
+use App\Domain\Order\ReadModel\OrderReturnsView;
 use App\Domain\Order\ReadModel\Dtos\OrderSearchDto;
 use App\Domain\Order\Services\OrderDraftSession;
 use App\Domain\Order\UseCases\CreateOrderFromDraft;
@@ -58,13 +59,13 @@ final class OrderController extends AbstractController {
     }
 
     #[Route("/orders/{id}", name: "order_show", requirements: ["id" => "\d+"], methods: ["GET"])]
-    public function show(int $id, OrderDetailsView $orderDetailsView, User $user): Response {
+    public function show(int $id, OrderDetailsView $orderDetailsView, User $user, OrderReturnsView $returns): Response {
         $order = $orderDetailsView->find($id, $user->getRole() === UserRole::Main);
         if ($order === null) {
             throw new NotFoundHttpException("Заказ не найден.");
         }
 
-        return $this->render("order/show.html.twig", ["order" => $order]);
+        return $this->render("order/show.html.twig", ["order" => $order, 'returns' => $returns->forOrder($id)]);
     }
 
     #[Route('/orders/{id}/print', name: 'order_print', requirements: ['id' => '\d+'], methods: ['GET'])]
