@@ -1,6 +1,6 @@
 <tr class="gridline1 legacy-order-line" data-order-line>
     <td>
-        {% if selectedLine is defined %}<input type="hidden" name="lines[{{ index }}][lineId]" value="{{ selectedLine.lineId }}">{% endif %}
+        {% if selectedLine.lineId is defined %}<input type="hidden" name="lines[{{ index }}][lineId]" value="{{ selectedLine.lineId }}">{% endif %}
         <select data-order-line-parent data-action="change->order-form#groupChanged" required>
             <option value="">Выбрать продукт</option>
             {% for group in productGroups %}
@@ -9,11 +9,11 @@
         </select>
     </td>
     <td>{% include 'order/_product_options.html.twig' with {index: index, products: selectedLine is defined ? selectedLine.options : [], selectedProductId: selectedLine is defined ? selectedLine.productId : null} %}</td>
-    <td><input type="number" name="lines[{{ index }}][quantity]" min="0.001" step="0.001" value="{{ selectedLine is defined ? selectedLine.quantity : '0.00' }}" data-action="input->order-form#recalculate" required></td>
+    <td><input type="number" name="lines[{{ index }}][quantity]" min="0.001" step="0.001" value="{{ selectedLine is defined ? selectedLine.quantity : '0.00' }}" data-action="input->order-form#recalculate" required> <span data-order-line-unit></span></td>
     <td><input type="number" name="lines[{{ index }}][unitPrice]" min="0" step="0.0001" value="{{ selectedLine is defined ? selectedLine.unitPrice : '0.00' }}" data-action="input->order-form#recalculate" required> грн.</td>
     <td data-order-form-target="vatColumn" hidden><input type="number" min="0" step="0.0001" value="0.0000" data-order-line-vat-price data-action="change->order-form#vatPriceChanged"> грн.</td>
     <td data-order-form-target="fopColumn" hidden><input type="number" min="0" step="0.0001" value="0.0000" data-order-line-fop-price data-action="change->order-form#fopPriceChanged"> грн.</td>
-    <td><input type="number" name="lines[{{ index }}][discount]" min="-100" max="100" step="0.01" value="0.00" data-action="input->order-form#recalculate"> %</td>
+    <td><input type="number" name="lines[{{ index }}][discount]" min="-100" max="100" step="0.01" value="{{ selectedLine.discount|default('0.00') }}" data-action="input->order-form#recalculate"> %</td>
     <td class="rightAlign"><output data-order-line-total>0.00 грн</output></td>
     <td><button type="button" class="addbutton" data-action="order-form#remove">Удалить</button></td>
 </tr>

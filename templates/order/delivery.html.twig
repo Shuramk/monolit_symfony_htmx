@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+{% block title %}Создание нового заказа — доставка{% endblock %}
+{% block body %}
+<main class="app-main legacy-order-form-page order-wizard">
+    <h3 class="legacy-order-breadcrumb"><a href="{{ path('order_list') }}">Заказы</a> » <a href="{{ path('order_list') }}">Список заказов</a> » Создание нового заказа</h3>
+    {% include 'order/_wizard_summary.html.twig' %}
+    <dl class="legacy-order-form-customer-details order-wizard-customer-details">
+        <dt>Заказчик:</dt><dd>{{ summary.customer.name }}<br>Телефон: {{ summary.customer.phone|phone_format }}</dd>
+    </dl>
+    <h2 class="order-wizard-delivery-title">Доставка:</h2>
+    <form method="post" action="{{ path('order_create') }}" class="order-wizard-delivery"
+          data-controller="order-delivery json-form" data-order-delivery-markup-value="{{ summary.markup }}"
+          data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity">
+        <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+        <input type="hidden" name="customerId" value="{{ summary.customer.id }}">
+        <input type="hidden" name="shippingCost" value="0" data-order-delivery-target="cost">
+        <table><tbody>
+            <tr><td>Доставка:</td><td>
+                <input type="hidden" name="pickup" value="{{ summary.carriers ? '0' : '1' }}">
+                <label class="order-wizard-pickup"><input type="checkbox" name="pickup" value="1" checked {{ summary.carriers ? '' : 'disabled' }} data-order-delivery-target="pickup" data-action="change->order-delivery#toggle">Самовывоз</label>
+                <fieldset data-order-delivery-target="delivery" hidden disabled>
+                    <select name="carrierId" aria-label="Перевозчик" required>{% for carrier in summary.carriers %}<option value="{{ carrier.id }}">{{ carrier.name }}</option>{% endfor %}</select>
+                    <label>Цена 1 доставки: <span><input type="number" name="shippingUnitPrice" value="0.00" min="0" max="99999999.99" step="0.01" required data-order-delivery-target="price" data-action="input->order-delivery#recalculate"> грн.</span></label>
+                    <label>Кол-во ходок: <input type="number" name="shippingTrips" value="1" min="1" max="10000" step="1" required data-order-delivery-target="trips" data-action="input->order-delivery#recalculate"></label>
+                    <div>Стоимость доставки: <output data-order-delivery-target="total">0.00</output> грн.</div>
+                    {% if summary.markup > 0 %}<div>Итого {{ summary.markup == 20 ? 'с НДС' : 'с наценкой ФОП' }}: <output data-order-delivery-target="withMarkup">0.00</output> грн.</div>{% endif %}
+                </fieldset>
+            </td></tr>
+            <tr><td><label for="order-shipping-address">Адрес доставки:</label></td><td><textarea id="order-shipping-address" name="shippingAddress" maxlength="10000" rows="7"></textarea></td></tr>
+            <tr><td><label for="order-desired-at">Дата выполнения заказа:</label></td><td><input id="order-desired-at" type="date" name="desiredAt" value="{{ desiredAt }}" required></td></tr>
+            <tr><td><label for="order-comments">Комментарии:</label></td><td><textarea id="order-comments" name="comments" maxlength="10000" rows="7"></textarea></td></tr>
+        </tbody></table>
+        <p class="error" data-json-form-target="error" role="alert" tabindex="-1" hidden></p>
+        <div class="legacy-order-form-actions"><button type="submit">Сохранить</button> <a href="{{ path('order_new_customer') }}">Изменить заказчика</a></div>
+    </form>
+</main>
+{% endblock %}

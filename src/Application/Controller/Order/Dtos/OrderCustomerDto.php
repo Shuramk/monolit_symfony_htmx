@@ -14,6 +14,13 @@ final readonly class OrderCustomerDto implements RequestDtoInterface {
         public ?string $comments = null,
         #[Assert\Regex(pattern: '/^\d+(?:\.\d{1,2})?$/')]
         public string $shippingCost = "0",
+        public ?bool $pickup = null,
+        #[Assert\PositiveOrZero]
+        public int $carrierId = 0,
+        #[Assert\Range(min: 0, max: 10000)]
+        public int $shippingTrips = 1,
+        #[Assert\Regex(pattern: '/^\d{1,8}(?:\.\d{1,2})?$/')]
+        public string $shippingUnitPrice = '0',
     ) {
     }
 }

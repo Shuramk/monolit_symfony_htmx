@@ -12,13 +12,29 @@ final readonly class OrderFormView {
     public function __construct(
         private ProductCatalogRepository $products,
         private CustomerViewRepository $customers,
+        private LegacyProductText $text,
     ) {
     }
 
     public function get(): OrderFormDto {
+        $groups = $this->products->findProductGroups();
+        foreach ($groups as &$group) {
+            $group['name'] = $this->text->format($group['name']);
+        }
+        unset($group);
+        $products = $this->products->findProductsByParent();
+        foreach ($products as &$variants) {
+            foreach ($variants as &$variant) {
+                $variant['name'] = $this->text->format($variant['name']);
+                $variant['unit'] = $this->text->format($variant['unit'] ?? '');
+            }
+            unset($variant);
+        }
+        unset($variants);
+
         return new OrderFormDto(
-            $this->products->findProductGroups(),
-            $this->products->findProductsByParent(),
+            $groups,
+            $products,
         );
     }
 

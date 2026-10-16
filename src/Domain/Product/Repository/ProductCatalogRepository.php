@@ -7,6 +7,7 @@ namespace App\Domain\Product\Repository;
 use App\Domain\Product\ReadModel\Dtos\ProductCatalogItemDto;
 use App\Domain\Product\ReadModel\Dtos\ProductDetailsDto;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ArrayParameterType;
 use Symfony\Component\Serializer\SerializerInterface;
 
 final readonly class ProductCatalogRepository {
@@ -67,7 +68,12 @@ final readonly class ProductCatalogRepository {
     public function findProductsByParent(): array {
         $productsByParent = [];
 
-        foreach ($this->connection->fetchAllAssociative("SELECT id, parent_id, name, unit, price FROM products WHERE parent_id IS NOT NULL AND enabled = 1 ORDER BY sorting, id") as $product) {
+        foreach ($this->connection->fetchAllAssociative('
+            SELECT product.id, product.parent_id, product.name, product.unit, product.price, parent.weight_per_unit
+            FROM products product INNER JOIN products parent ON parent.id = product.parent_id
+            WHERE product.enabled = 1 AND parent.enabled = 1
+            ORDER BY product.sorting, product.id
+        ') as $product) {
             $productsByParent[(int) $product["parent_id"]][] = $product;
         }
 
@@ -80,5 +86,19 @@ final readonly class ProductCatalogRepository {
             "SELECT id, name, unit, price FROM products WHERE parent_id = :parentId AND enabled = 1 ORDER BY sorting, id",
             ["parentId" => $parentId],
         );
+    }
+
+    public function orderProducts(array $ids): array {
+        if ($ids === []) {
+
+            return [];
+        }
+
+        return $this->connection->fetchAllAssociative('
+            SELECT product.id, product.parent_id, product.name, product.unit, product.price,
+                parent.name AS group_name, parent.weight_per_unit
+            FROM products product INNER JOIN products parent ON parent.id = product.parent_id
+            WHERE product.id IN (:ids) AND product.enabled = 1 AND parent.enabled = 1
+        ', ['ids' => $ids], ['ids' => ArrayParameterType::INTEGER]);
     }
 }

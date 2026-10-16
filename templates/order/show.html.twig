@@ -12,8 +12,16 @@
             </div>
             <div class="legacy-order-actions">
                 <a class="legacy-order-print-button" href="{{ path('order_print', {id: order.id}) }}" target="_blank" rel="noopener">Печать заказа</a>
+                <div class="legacy-order-shipping-actions">
+                {% if order.state.displayStatus.value != 'cancelled' and is_granted('LEGACY_DIVISION', 232) and is_granted('LEGACY_DIVISION', 310) %}
+                    <a href="{{ path('shipping_new', {id: order.id}) }}">Создать задачу на отгрузку</a>
+                {% endif %}
+                {% if is_granted('LEGACY_DIVISION', 305) %}
+                    <a href="{{ path('shipping_list', {q: order.id}) }}">Задачи на отгрузку</a>
+                {% endif %}
+                </div>
                 {% if order.state.displayStatus.value != 'cancelled' %}
-                    <a href="{{ path('order_edit', {id: order.id}) }}">Редактировать заказ</a>
+                    <a class="legacy-order-edit-link" href="{{ path('order_edit', {id: order.id}) }}">Редактировать заказ</a>
                 {% endif %}
             </div>
         </div>

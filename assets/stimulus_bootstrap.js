@@ -10,6 +10,10 @@ import UserPermissionsController from './controllers/user_permissions_controller
 import CrmController from './controllers/crm_controller.js';
 import CrmBoardController from './controllers/crm_board_controller.js';
 import OrderStatusController from './controllers/order_status_controller.js';
+import ShippingFormController from './controllers/shipping_form_controller.js';
+import ShippingStatusController from './controllers/shipping_status_controller.js';
+import OrderCustomerController from './controllers/order_customer_controller.js';
+import OrderDeliveryController from './controllers/order_delivery_controller.js';
 
 const app = startStimulusApp();
 app.register('order-form', OrderFormController);
@@ -23,5 +27,9 @@ app.register('user-permissions', UserPermissionsController);
 app.register('crm', CrmController);
 app.register('crm-board', CrmBoardController);
 app.register('order-status', OrderStatusController);
+app.register('shipping-form', ShippingFormController);
+app.register('shipping-status', ShippingStatusController);
+app.register('order-customer', OrderCustomerController);
+app.register('order-delivery', OrderDeliveryController);
 // register any custom, 3rd party controllers here
 // app.register('some_controller_name', SomeImportedController);

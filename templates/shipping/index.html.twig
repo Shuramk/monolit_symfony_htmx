@@ -1,0 +1,77 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ page.archive ? 'Выполненные задачи на отгрузку' : 'Задачи на отгрузку' }}{% endblock %}
+{% block body %}
+<main class="app-main shipping-page">
+    <h3>Задачи » {{ page.archive ? 'Выполненные задачи на отгрузку' : 'Задачи на отгрузку' }}</h3>
+    <div class="shipping-toolbar">
+        <form method="get"><input name="q" value="{{ page.query }}" placeholder="Задача, заказ, заказчик" aria-label="Поиск задач"><button type="submit">Найти</button></form>
+        {% if page.archive and is_granted('LEGACY_DIVISION', 305) %}<a href="{{ path('shipping_list') }}">Активные задачи</a>
+        {% elseif not page.archive and is_granted('LEGACY_DIVISION', 311) %}<a href="{{ path('shipping_archive') }}">Выполненные задачи</a>{% endif %}
+        <span>Всего: {{ page.total }}</span>
+    </div>
+    {% set paginationRoute = page.archive ? 'shipping_archive' : 'shipping_list' %}
+    {% set actionFilterParams = {q: page.query, page: page.page} %}
+    {% include 'components/_pagination.html.twig' with {current: page.page, pages: page.pages, route: paginationRoute, params: {q: page.query}} only %}
+    <div class="shipping-table-wrap">
+    <table class="grid shipping-list">
+        <colgroup><col class="shipping-col-number"><col class="shipping-col-date"><col class="shipping-col-time"><col class="shipping-col-carrier"><col class="shipping-col-comment"><col class="shipping-col-ready"><col class="shipping-col-complete"><col class="shipping-col-edit"><col class="shipping-col-documents"></colgroup>
+        <thead><tr class="gridsheader"><th></th><th>Дата<br>отгрузки</th><th>Время<br>отгрузки</th><th>Перевозчик</th><th>Комментарий</th><th>Собран</th><th>Выполнено</th><th>Редактировать</th><th>Накладная</th></tr></thead>
+        <tbody>
+        {% for task in page.rows %}
+            <tr class="{{ task.dueClass }}" id="task-{{ task.id }}"{% if not page.archive %} data-controller="shipping-status" data-shipping-status-id-value="{{ task.id }}"{% endif %}>
+                <td>{{ task.id }}</td>
+                <td>{{ task.performance_date ? task.performance_date|date('d-m-Y') : '—' }}</td>
+                <td>{{ task.performance_date ? task.performance_date|date('H:i') : '—' }}</td>
+                <td>{{ task.carrier }}{% if task.shippingPrice > 0 %}<br>{{ task.shippingPrice }} грн{% endif %}<br>{{ task.storage == 1 ? 'Офис' : 'Цех' }}</td>
+                <td class="shipping-comment">{% if task.order_id %}Заказ №{{ task.order_id }}. {% else %}Перемещение. {% endif %}
+                    {{ task.comment|striptags|nl2br }}
+                    {% if task.order_id and is_granted('LEGACY_DIVISION', 220) %}<br><a href="{{ path('order_show', {id: task.order_id}) }}">Смотреть заказ</a>{% endif %}
+                    <details><summary>Продукция</summary><table class="shipping-task-products">{% for line in task.lines %}<tr><td>{{ line.name }}</td><td>{{ line.quantity }} {{ line.unit }}</td></tr>{% else %}<tr><td>Состав задачи пуст</td></tr>{% endfor %}</table></details>
+                </td>
+                <td class="shipping-status-buttons">
+                    <span class="shipping-ready-check" data-shipping-status-target="collectCheck" aria-label="Собрано" {{ task.collected ? '' : 'hidden' }}>✓</span>
+                    {% if not task.collected and not page.archive and task.order_id and app.user.canExecuteShipping and is_granted('LEGACY_DIVISION', 306) %}
+                        <form action="{{ path('shipping_action', actionFilterParams|merge({id: task.id, action: 'collect'})) }}" method="post"
+                              data-action="submit->shipping-status#submit" data-shipping-status-target="collectForm">
+                            <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+                            <input type="hidden" name="version" value="{{ task.version }}">
+                            <button type="submit" class="shipping-button" data-shipping-status-target="collectButton">Собрать</button>
+                        </form>
+                    {% elseif not task.collected %}—{% endif %}
+                    {% if not page.archive and app.user.canApproveShipping and is_granted('LEGACY_DIVISION', 1700) %}
+                        <details class="shipping-approval">
+                        <summary data-shipping-status-target="approvalSummary">Согласовано: {{ task.allowed ? '✓' : '—' }}</summary>
+                        <form action="{{ path('crm_shipment_approval', actionFilterParams|merge({id: task.id})) }}" method="post"
+                              data-action="submit->shipping-status#submit" data-shipping-status-target="approvalForm">
+                            <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+                            <input type="hidden" name="allowed" value="{{ task.allowed ? 0 : 1 }}"><input type="hidden" name="expectedAllowed" value="{{ task.allowed ? 1 : 0 }}">
+                            <input type="hidden" name="returnToShipping" value="1">
+                            <button type="submit" data-shipping-status-target="approvalButton">{{ task.allowed ? 'Снять' : 'Согласовать' }}</button>
+                        </form>
+                        </details>
+                    {% elseif task.allowed %}<span class="shipping-approved-label">Согласовано ✓</span>
+                    {% endif %}
+                    {% if not page.archive %}<p data-shipping-status-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>{% endif %}
+                </td>
+                <td>{% if page.archive %}{{ task.completed_at ? task.completed_at|date('d-m-Y H:i') : '—' }}{% elseif task.order_id %}
+                    {% if app.user.canExecuteShipping and is_granted('LEGACY_DIVISION', 306) %}
+                        <details class="shipping-confirm"><summary class="shipping-button">Выполнено</summary><p>Списать продукцию со склада и завершить задачу?</p>{% include 'shipping/_action.html.twig' with {task: task, action: 'complete', label: 'Да, выполнить', filterParams: actionFilterParams} only %}</details>
+                    {% endif %}
+                {% else %}Перемещение{% endif %}</td>
+                <td>{% if not page.archive and task.order_id %}
+                    {% if is_granted('LEGACY_DIVISION', 307) and is_granted('LEGACY_DIVISION', 309) %}<a class="shipping-button" href="{{ path('shipping_edit', {id: task.id}) }}">Редактировать</a>{% endif %}
+                    {% if is_granted('LEGACY_DIVISION', 308) %}<details class="shipping-delete"><summary>Удалить</summary><p>Удалить активную задачу без списания?</p>{% include 'shipping/_action.html.twig' with {task: task, action: 'delete', label: 'Да, удалить', filterParams: actionFilterParams} only %}</details>{% endif %}
+                {% endif %}</td>
+                <td>{% if task.order_id %}<div class="shipping-documents">
+                    <a class="shipping-button" href="{{ path('shipping_print', {id: task.id, kind: 'invoice'}) }}" target="_blank" rel="noopener">Накладная</a>
+                    <a class="shipping-button" href="{{ path('shipping_print', {id: task.id, kind: 'priced'}) }}" target="_blank" rel="noopener">Накладная(с ценами)</a>
+                    <a class="shipping-button" href="{{ path('shipping_print', {id: task.id, kind: 'security'}) }}" target="_blank" rel="noopener">Охрана</a>
+                </div>{% endif %}</td>
+            </tr>
+        {% else %}<tr><td colspan="9">Нет задач</td></tr>{% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% include 'components/_pagination.html.twig' with {current: page.page, pages: page.pages, route: paginationRoute, params: {q: page.query}} only %}
+</main>
+{% endblock %}

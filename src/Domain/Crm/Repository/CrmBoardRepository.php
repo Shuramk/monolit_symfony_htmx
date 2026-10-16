@@ -48,7 +48,10 @@ final readonly class CrmBoardRepository {
         [$filter, $args, $types] = $this->orderFilter($query, $managers, true);
 
         return $this->connection->fetchAllAssociative('SELECT t.*,o.customer_name,o.markup,o.manager_id,
-            (SELECT COUNT(*) FROM order_status_history h WHERE h.task_id=t.id) steps
+            (SELECT COUNT(*) FROM order_status_history h WHERE h.task_id = t.id)
+                + (SELECT COUNT(*) FROM order_changelog h
+                    WHERE h.order_id = t.order_id
+                    AND CAST(JSON_UNQUOTE(JSON_EXTRACT(h.snapshot, \'$.context.taskId\')) AS UNSIGNED) = t.id) AS steps
             FROM warehouse_shipping_tasks t LEFT JOIN orders o ON o.id=t.order_id
             WHERE t.type=2 AND t.status=0'.$filter.' ORDER BY t.performance_date IS NULL,t.performance_date,t.id', $args, $types);
     }

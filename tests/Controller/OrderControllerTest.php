@@ -292,7 +292,7 @@ final class OrderControllerTest extends WebTestCase {
         self::assertCount(1, $client->getCrawler()->filter("form.legacy-order-form template[data-order-form-target=\"template\"]"));
     }
 
-    public function testTwoStepJsonCreatesOrderFromSessionDraftAndClearsIt(): void {
+    public function testThreeStepJsonCreatesOrderFromSessionDraftAndClearsIt(): void {
         $client = static::createClient();
         $this->authenticate($client);
         $client->followRedirect();
@@ -320,7 +320,7 @@ final class OrderControllerTest extends WebTestCase {
         self::assertSame("/orders/new/customer", $draftResponse["location"]);
         $crawler = $client->request("GET", $draftResponse["location"]);
         self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->filter('.legacy-order-form .error[data-json-form-target="error"][role="alert"][hidden]'));
+        self::assertCount(1, $crawler->filter('.error[data-order-customer-target="error"][role="alert"][hidden]'));
         $client->request("POST", "/orders", server: ["CONTENT_TYPE" => "application/json", "HTTP_X_CSRF_TOKEN" => $token], content: json_encode([
             "customerId" => $customerId,
             "desiredAt" => "not-a-date",
@@ -329,7 +329,9 @@ final class OrderControllerTest extends WebTestCase {
         self::assertResponseStatusCodeSame(400);
         self::assertResponseHeaderSame("content-type", "application/json");
         self::assertArrayHasKey("message", json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR));
-        $crawler = $client->request("GET", "/orders/new/customer");
+        $client->jsonRequest('POST', '/orders/draft/customer', ['customerId' => $customerId], ['HTTP_X_CSRF_TOKEN' => $token]);
+        self::assertResponseIsSuccessful();
+        $crawler = $client->request("GET", "/orders/new/delivery");
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton("Сохранить")->form([
             "customerId" => $customerId,
@@ -339,12 +341,13 @@ final class OrderControllerTest extends WebTestCase {
             "comments" => "Проверка черновика",
         ]);
         $customerPayload = $form->getPhpValues();
+        $customerPayload['pickup'] = '1';
         unset($customerPayload["_token"]);
         $customerPayload["markup"] = 20;
         $customerPayload["lines"] = [["productId" => 999999999, "quantity" => "100"]];
         $client->request("POST", "/orders", server: ["CONTENT_TYPE" => "application/json", "HTTP_X_CSRF_TOKEN" => $token], content: json_encode(array_replace($customerPayload, ["customerId" => 999999999]), JSON_THROW_ON_ERROR));
         self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Клиент не найден.', json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR)['message']);
+        self::assertStringContainsString('Заказчик изменился.', json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR)['message']);
         $client->request("GET", "/orders/new/customer");
         self::assertResponseIsSuccessful();
 
@@ -360,7 +363,7 @@ final class OrderControllerTest extends WebTestCase {
             self::assertSame((int) $customerId, (int) $order["customer_id"]);
             self::assertSame(10, (int) $order["markup"]);
             self::assertSame("2026-10-21 00:00:00", $order["desired_at"]);
-            self::assertSame(25.5, (float) $order["shipping_cost"]);
+            self::assertSame(0.0, (float) $order["shipping_cost"]);
             self::assertSame("Адрес двухшагового заказа", $order["shipping_address"]);
             $line = $connection->fetchAssociative("SELECT product_id, quantity, unit_price FROM order_items WHERE order_id = ?", [$orderId]);
             self::assertSame((int) $productId, (int) $line["product_id"]);

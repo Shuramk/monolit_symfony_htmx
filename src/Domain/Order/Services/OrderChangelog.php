@@ -65,7 +65,11 @@ final readonly class OrderChangelog {
             'status' => (string) $source['status'],
             'customer' => ['id' => $source['customer_id'] === null ? null : (int) $source['customer_id'], 'name' => (string) $source['customer_name'], 'phone' => $source['customer_phone']],
             'lines' => $lines,
-            'delivery' => ['address' => $source['shipping_address'], 'date' => (string) $source['desired_at'], 'cost' => (string) $source['shipping_cost']],
+            'delivery' => [
+                'address' => $source['shipping_address'], 'date' => (string) $source['desired_at'],
+                'cost' => (string) $source['shipping_cost'], 'carrierId' => $source['carrier_id'] ?? null,
+                'trips' => $source['shipping_trips'] ?? null, 'unitPrice' => $source['shipping_unit_price'] ?? null,
+            ],
             'markup' => (int) $source['markup'],
             'goodsTotal' => Decimal::fromScaled($financial->goodsTotal, 2)->format(),
             'total' => Decimal::fromScaled($financial->total, 2)->format(),

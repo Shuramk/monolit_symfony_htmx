@@ -3,14 +3,17 @@
         Заказ {% if task.order_id and is_granted('LEGACY_DIVISION',226) %}<a href="{{ path('order_show',{id:task.order_id}) }}">№{{ task.order_id }}</a>{% else %}{{ task.order_id ? '№' ~ task.order_id : '—' }}{% endif %}
     </header>
     <div class="crm-card-body"><div class="crm-card-customer">{{ task.customer_name }}</div>Сумма: <strong>{{ task.amount|number_format(2,'.',' ') }}</strong><br>
+        {% if is_granted('LEGACY_DIVISION', 305) %}<a href="{{ path('shipping_list', {q: task.id}) }}">Задача №{{ task.id }}</a>{% endif %}
         <div class="crm-card-comment">{{ task.comment|striptags }}</div><span class="crm-card-steps" title="Записей в истории">{{ task.steps }}</span>
     </div>
     <footer>{% include 'crm/_deadline.html.twig' with {deadline:task.deadline} only %}
         <span class="crm-task-ready">Готов: {% if task.collected %}<span class="crm-ready-check" aria-label="Собрано">✓</span>{% else %}−{% endif %}</span>
+        {% if app.user.canApproveShipping and is_granted('LEGACY_DIVISION', 1700) %}
         <form action="{{ path('crm_shipment_approval',{id:task.id}) }}" method="post" data-action="submit->crm-board#approval">
             <input type="hidden" name="_token" value="{{ csrf_token('session') }}"><input type="hidden" name="expectedAllowed" value="{{ task.allowed ? 1 : 0 }}">
             <label>Согласовано <input type="checkbox" name="allowed" value="1" {{ task.allowed ? 'checked' }} data-action="change->crm-board#approval"></label>
             <button type="submit" class="crm-approval-save">Сохранить</button>
         </form>
+        {% else %}<span>Согласовано: {{ task.allowed ? '✓' : '—' }}</span>{% endif %}
     </footer>
 </article>
