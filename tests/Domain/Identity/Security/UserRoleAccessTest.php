@@ -16,7 +16,7 @@ final class UserRoleAccessTest extends TestCase {
             $user->setRole(LegacyUserRoleMapper::fromGroupId($role));
             self::assertNull($user->getRole());
             self::assertSame([],$user->getRoles());
-            try { new IdentityUserChecker()->checkPreAuth($user); self::fail('Role must be denied'); }
+            try { (new IdentityUserChecker())->checkPreAuth($user); self::fail('Role must be denied'); }
             catch (CustomUserMessageAccountStatusException $exception) { self::assertStringContainsString('роль',$exception->getMessage()); }
         }
     }
@@ -26,7 +26,7 @@ final class UserRoleAccessTest extends TestCase {
             $user = new User(1,'test','Test',null,true);
             $user->setRole($role);
             self::assertSame(['ROLE_USER',$role->value],$user->getRoles());
-            new IdentityUserChecker()->checkPreAuth($user);
+            (new IdentityUserChecker())->checkPreAuth($user);
         }
     }
 

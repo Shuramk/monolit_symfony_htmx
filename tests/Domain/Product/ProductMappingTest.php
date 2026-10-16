@@ -123,20 +123,34 @@ final class ProductMappingTest extends KernelTestCase {
         $em = self::getContainer()->get('doctrine.orm.entity_manager');
         $connection = $em->getConnection();
         $repository = self::getContainer()->get(ProductRepository::class);
-        $row = $connection->fetchAssociative('SELECT product.id, product.parent_id FROM products product INNER JOIN products parent ON parent.id = product.parent_id WHERE product.enabled = 1 AND parent.enabled = 1 ORDER BY product.id LIMIT 1');
-        self::assertIsArray($row);
-        $id = (int) $row['id'];
-        self::assertTrue($repository->getById($id)->isAvailableForOrder());
-        self::assertSame([$id], array_keys($repository->getByIds([$id, $id, 999999999])));
-        self::assertSame([], $repository->getByIds([]));
         $connection->beginTransaction();
         try {
-            $connection->executeStatement('UPDATE products SET enabled = 0 WHERE id = ?', [$row['parent_id']]);
-            $product = $repository->getByIds([$id])[$id];
+            $now = new \DateTimeImmutable('2026-10-16 12:00:00');
+            $group = new Product(899003, 'Группа проверки доступности', 'м²', Decimal::zero(4), $now);
+            $variant = new Product(899004, 'Товар проверки доступности', 'м²', Decimal::fromString('10', 4), $now, $group);
+            $em->persist($group);
+            $em->persist($variant);
+            $em->flush();
+            $id = $variant->getId();
+            self::assertTrue($repository->getById($id)->isAvailableForOrder());
+            self::assertSame([$id], array_keys($repository->getByIds([$id, $id, 999999999])));
+            self::assertSame([], $repository->getByIds([]));
+
+            $connection->update('products', ['enabled' => 0], ['id' => $group->getId()]);
+            self::assertSame([], $repository->getByIds([$id]));
+            $em->clear();
+            $product = $em->find(Product::class, $id);
+            self::assertInstanceOf(Product::class, $product);
             self::assertFalse($product->isAvailableForOrder());
             self::assertTrue($product->isAvailableForOrder(requireActiveParent: false));
-            $connection->executeStatement('UPDATE products SET enabled = 0 WHERE id = ?', [$id]);
-            $product = $repository->getByIds([$id])[$id];
+
+            $connection->update('products', ['enabled' => 1], ['id' => 899003]);
+            $connection->update('products', ['enabled' => 0], ['id' => $id]);
+            self::assertSame([], $repository->getByIds([$id]));
+            $em->clear();
+            $product = $em->find(Product::class, $id);
+            self::assertInstanceOf(Product::class, $product);
+            self::assertFalse($product->isAvailableForOrder());
             self::assertFalse($product->isAvailableForOrder(requireActiveParent: false));
         } finally {
             $connection->rollBack();

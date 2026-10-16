@@ -14,6 +14,8 @@ doctrine:
         #server_version: '16'
 
     orm:
+        controller_resolver:
+            auto_mapping: false
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
         identity_generation_preferences:

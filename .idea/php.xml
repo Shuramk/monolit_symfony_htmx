@@ -36,7 +36,6 @@
       <path value="$PROJECT_DIR$/vendor/symfony/options-resolver" />
       <path value="$PROJECT_DIR$/vendor/symfony/doctrine-bridge" />
       <path value="$PROJECT_DIR$/vendor/symfony/cache" />
-      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-deepclone" />
       <path value="$PROJECT_DIR$/vendor/phpunit/php-file-iterator" />
       <path value="$PROJECT_DIR$/vendor/symfony/maker-bundle" />
       <path value="$PROJECT_DIR$/vendor/phpunit/php-text-template" />
@@ -131,9 +130,7 @@
       <path value="$PROJECT_DIR$/vendor/sebastian/recursion-context" />
       <path value="$PROJECT_DIR$/vendor/sebastian/global-state" />
       <path value="$PROJECT_DIR$/vendor/twig/twig" />
-      <path value="$PROJECT_DIR$/vendor/sebastian/file-filter" />
       <path value="$PROJECT_DIR$/vendor/twig/extra-bundle" />
-      <path value="$PROJECT_DIR$/vendor/sebastian/git-state" />
       <path value="$PROJECT_DIR$/vendor/sebastian/environment" />
       <path value="$PROJECT_DIR$/vendor/sebastian/exporter" />
       <path value="$PROJECT_DIR$/vendor/sebastian/version" />
@@ -146,9 +143,11 @@
       <path value="$PROJECT_DIR$/vendor/league/uri-interfaces" />
       <path value="$PROJECT_DIR$/vendor/symfony/html-sanitizer" />
       <path value="$PROJECT_DIR$/vendor/brick/math" />
+      <path value="$PROJECT_DIR$/vendor/masterminds/html5" />
+      <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php84" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.4" />
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.3" />
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />
   </component>

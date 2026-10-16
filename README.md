@@ -11,12 +11,26 @@
 
 ## Запуск
 
+Проект рассчитан на PHP 8.3 и Symfony 7.4 LTS. В Composer задана платформа
+`8.3.0`: обновление зависимостей даже с более нового локального PHP не должно
+добавлять пакеты, требующие PHP 8.4+. Для MySQL/MariaDB нужен `pdo_mysql`,
+для тестов также нужны DOM/XML и mbstring. Рекомендуется включить intl.
+
+При установленном Symfony CLI версия выбирается из `.php-version`:
+
 ```bash
-composer install
-php -S 127.0.0.1:8080 -t public
+symfony composer install
+symfony php -S 127.0.0.1:8080 -t public
 ```
 
 Открыть `http://127.0.0.1:8080/`.
+
+Без Symfony CLI указывайте PHP 8.3 явно: `php8.3 composer.phar install`,
+`php8.3 bin/console …`, `php8.3 bin/phpunit`. Путь к Composer/CLI PHP на хостинге
+может отличаться. Правило PHP в `.htaccess` не переключает консольный PHP.
+На сервере выполнять `composer install` из сохранённого `composer.lock`, не `update`.
+Не использовать `--ignore-platform-reqs`: проверка реального окружения —
+`symfony composer check-platform-reqs` (с `--no-dev` для production-установки).
 
 ## Проверка
 
@@ -30,6 +44,13 @@ PHPUnit использует отдельную базу `monolit_test` и от�
 остаётся только для чтения. Миграции новой модели перед тестами применяются отдельно:
 
 ```bash
-php bin/console doctrine:migrations:migrate --env=test --no-interaction
-php bin/phpunit
+symfony console doctrine:migrations:migrate --env=test --no-interaction
+symfony php bin/phpunit
 ```
+
+PHPUnit использует совместимую с PHP 8.3 ветку 12.5. Doctrine на PHP 8.3
+генерирует прокси: ORM-сущности не должны быть `final`. Бизнес-операции и схема БД
+при переходе на PHP 8.3 не менялись.
+
+Результаты проверки перехода и известные проблемы тестовых фикстур:
+[php83.md](.knowledge/Application/php83.md).

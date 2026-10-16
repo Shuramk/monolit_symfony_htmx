@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "enterprise_profiles")]
-final class Enterprise {
+class Enterprise {
     #[ORM\Id]
     #[ORM\Column(type: "bigint")]
     private int $id;
