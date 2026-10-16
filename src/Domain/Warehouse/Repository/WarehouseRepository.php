@@ -27,8 +27,8 @@ final readonly class WarehouseRepository {
         $this->connection->update('warehouse_history', ['payload'=>json_encode(['productionEntryId'=>$entryId,'warnings'=>$warnings], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)], ['id'=>$id]);
     }
 
-    public function record(Product $product, int $userId, string $action, Decimal $quantity, int $storage, string $comment, ?int $shift, ?string $manufacturingDate, string $key, array $payload, ?int $taskId = null): int {
-        $this->connection->insert('warehouse_history', ['product_id'=>$product->getId(),'user_id'=>$userId,'action'=>$action,'quantity'=>$quantity->format(3),'storage'=>$storage,'comment'=>$comment,'shift_id'=>$shift,'manufacturing_date'=>$manufacturingDate,'created_at'=>(new \DateTimeImmutable())->format('Y-m-d H:i:s'),'operation_key'=>$key,'payload'=>json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),'task_id'=>$taskId]);
+    public function record(Product $product, int $userId, string $action, Decimal $quantity, int $storage, string $comment, ?int $shift, ?string $manufacturingDate, string $key, array $payload, ?int $taskId = null, ?\DateTimeImmutable $now = null): int {
+        $this->connection->insert('warehouse_history', ['product_id'=>$product->getId(),'user_id'=>$userId,'action'=>$action,'quantity'=>$quantity->format(3),'storage'=>$storage,'comment'=>$comment,'shift_id'=>$shift,'manufacturing_date'=>$manufacturingDate,'created_at'=>($now ?? new \DateTimeImmutable())->format('Y-m-d H:i:s'),'operation_key'=>$key,'payload'=>json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),'task_id'=>$taskId]);
         return (int)$this->connection->lastInsertId();
     }
 

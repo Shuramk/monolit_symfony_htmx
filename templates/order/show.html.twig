@@ -6,6 +6,10 @@
 <main class="app-main legacy-order-card" data-controller="warehouse" data-action="click@window->warehouse#outside keydown.esc@window->warehouse#closeAll resize@window->warehouse#closeAll scroll@window->warehouse#closeAll">
     <div class="legacy-order-workspace">
         <h3 class="legacy-order-breadcrumb"><a href="{{ path('order_list') }}">Заказы</a> » Заказ №{{ order.id }}</h3>
+        {% if order.state.displayStatus.value != 'cancelled' and is_granted('LEGACY_DIVISION', 102) and is_granted('LEGACY_DIVISION', 103) and app.user.role.value in ['ROLE_MAIN','ROLE_SALES','ROLE_PRODUCTION'] %}
+            <p><a href="{{ path('order_return_new', {id: order.id}) }}">Принять возврат на склад</a></p>
+        {% endif %}
+        {% include 'order_returns/_history.html.twig' with {returns: returns} only %}
         <div class="legacy-order-head">
             <div>Время создания заказа {{ order.createdAt|date('d-m-Y H:i:s') }}.
                 <div><b>Дата выполнения заказа:</b> {{ order.desiredDate|date('d-m-Y') }}</div>

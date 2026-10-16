@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% block title %}Приёмка возврата{% endblock %}
+{% block body %}
+<main class="app-main">
+    <h3><a href="{{ path('order_returns') }}">Возвраты</a> » Заказ №{{ form.order.id }}</h3>
+    <p>{{ form.order.customer_name }}</p>
+    {% if form.draft %}<p>Заявка №{{ form.draft.id }}: {{ form.draft.comment }}</p>{% endif %}
+    <form method="post" action="{{ path('order_return_accept', {id: form.order.id}) }}" data-controller="json-form" data-action="submit->json-form#submit invalid->json-form#invalid:capture input->json-form#clearValidity change->json-form#clearValidity">
+        <input type="hidden" name="_token" value="{{ csrf_token('session') }}">
+        <input type="hidden" name="operationId" value="{{ operationId }}">
+        <input type="hidden" name="orderVersion" value="{{ form.order.edit_version }}">
+        {% if form.draft %}<input type="hidden" name="draftId" value="{{ form.draft.id }}">{% endif %}
+        <table class="grid"><thead><tr><th>Наименование</th><th>Цена</th><th>Доступно к возврату</th><th>Принять в Цех</th></tr></thead><tbody>
+        {% for item in form.items %}
+            <tr><td>{{ item.product_group_name }} {{ item.product_name }}</td><td>{{ item.unit_price }}{% if item.invalidPrice %} — разные цены, приёмка запрещена{% endif %}</td><td>{{ item.available }} {{ item.unit }}</td>
+                <td><input type="hidden" name="items[{{ loop.index0 }}][productId]" value="{{ item.productId }}"><input type="number" name="items[{{ loop.index0 }}][quantity]" min="0" max="{{ max(0, item.available) }}" step="0.001" value="{{ item.quantityInput }}" {{ item.invalidPrice ? 'disabled' }} aria-label="Количество {{ item.product_name }}"></td></tr>
+        {% endfor %}
+        </tbody></table>
+        <button type="submit">Принять на склад</button>
+        <p data-json-form-target="error" class="legacy-form-error" hidden tabindex="-1" role="alert"></p>
+    </form>
+</main>
+{% endblock %}
