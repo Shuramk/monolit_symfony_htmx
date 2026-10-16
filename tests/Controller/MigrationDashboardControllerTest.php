@@ -4,20 +4,18 @@ namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class MigrationDashboardControllerTest extends WebTestCase
-{
-    public function testDashboardRendersMigrationBoundary(): void
-    {
+final class MigrationDashboardControllerTest extends WebTestCase {
+    public function testRootRedirectsGuestToLogin(): void {
         $client = static::createClient();
         $client->request('GET', '/');
 
+        self::assertResponseRedirects('/login');
+        $client->followRedirect();
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Monolit → Symfony + HTMX');
-        self::assertSelectorExists('[hx-get="/migration/status"]');
+        self::assertSelectorExists('form input[name="login"]');
     }
 
-    public function testStatusFragmentRendersWithoutDatabaseAccess(): void
-    {
+    public function testStatusFragmentRendersWithoutDatabaseAccess(): void {
         $client = static::createClient();
         $client->request('GET', '/migration/status');
 

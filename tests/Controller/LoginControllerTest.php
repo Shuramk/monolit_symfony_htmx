@@ -29,6 +29,10 @@ final class LoginControllerTest extends WebTestCase {
             self::assertResponseRedirects('/shipping');
             $client->request('GET', '/login');
             self::assertResponseRedirects('/shipping');
+            $client->request('GET', '/');
+            self::assertResponseRedirects('/login');
+            $client->followRedirect();
+            self::assertResponseRedirects('/shipping');
             $client->followRedirect();
             self::assertResponseIsSuccessful();
         } finally {
@@ -49,6 +53,18 @@ final class LoginControllerTest extends WebTestCase {
         self::assertResponseIsSuccessful();
         self::assertSame(User::DEFAULT_MAX_ACTIVE_SESSIONS, (int) self::getContainer()->get("doctrine.dbal.app_connection")->fetchOne("SELECT COUNT(*) FROM identity_user_sessions WHERE user_id = ?", [990001]));
         self::assertSame("login_success", self::getContainer()->get("doctrine.dbal.app_connection")->fetchOne("SELECT event_type FROM identity_authentication_audit WHERE legacy_user_id = ? ORDER BY id DESC LIMIT 1", [990001]));
+    }
+
+    public function testRootRedirectsAuthenticatedUserWithoutStartPageToEnterprise(): void {
+        $client = static::createClient();
+        $this->authenticate($client);
+
+        $client->request('GET', '/');
+        self::assertResponseRedirects('/login');
+        $client->followRedirect();
+        self::assertResponseRedirects('/enterprise');
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
     }
 
     public function testLogoutRequiresCsrfAndValidFormLogsOut(): void {

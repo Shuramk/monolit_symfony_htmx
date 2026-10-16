@@ -7,7 +7,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class MigrationDashboardController extends AbstractController {
     #[Route('/', name: 'migration_dashboard', methods: ['GET'])]
     public function index(): Response {
-        return $this->render('migration/dashboard.html.twig');
+        return $this->redirectToRoute('app_login');
     }
 
     #[Route('/migration/status', name: 'migration_status', methods: ['GET'])]
